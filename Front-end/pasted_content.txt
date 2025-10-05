@@ -1,0 +1,184 @@
+🧾 Resumo Geral do Projeto e Caminho Técnico
+
+O desafio propõe a criação de um sistema com banco de dados (B.D.) e Web Service (WS) capaz de gravar, armazenar e recuperar arquivos de áudio e vídeo, com limite de validade de 180 dias e controle de acesso por usuário e senha.
+
+🧠 Objetivo Principal
+
+Desenvolver um sistema que:
+
+Permita gravar áudio e vídeo;
+
+Armazene esses arquivos em um servidor (via Web Service);
+
+Tenha registro e controle em um banco de dados (MySQL);
+
+Permita recuperar (baixar) arquivos somente dentro do prazo de 180 dias;
+
+Bloqueie downloads após o prazo expirar, informando o motivo;
+
+Exija autenticação (usuário e senha) para acessar e baixar arquivos.
+
+🧱 Como o Sistema Funciona (Arquitetura Geral)
+
+O sistema é dividido em três grandes partes:
+
+1️⃣ Banco de Dados (MySQL)
+
+O banco não armazena o arquivo de áudio/vídeo em si, mas sim os metadados do arquivo — ou seja, as informações que identificam e controlam ele.
+Cada registro representa um arquivo, contendo:
+
+Nome do arquivo
+
+Tipo (audio ou video)
+
+Caminho no servidor ou Web Service
+
+Data do upload
+
+Data de expiração (upload + 180 dias)
+
+Usuário que fez o upload
+
+👉 Assim, o banco serve como controle administrativo e de validade, enquanto o arquivo real fica guardado no servidor.
+
+2️⃣ Web Service (WS)
+
+O Web Service é o componente responsável por receber e armazenar os arquivos reais.
+Ele funciona por meio de uma API HTTP, com endpoints como:
+
+POST /upload → recebe o arquivo e salva no servidor;
+
+GET /download/{id} → entrega o arquivo ao usuário autorizado, se ainda estiver dentro do prazo;
+
+DELETE /expirados → (opcional) remove arquivos que já passaram dos 180 dias.
+
+Fluxo de upload:
+
+O usuário envia um arquivo via POST (formulário ou requisição HTTP).
+
+O WS salva o arquivo em uma pasta ou serviço de armazenamento (ex: /media/uploads/).
+
+O WS retorna uma URL pública ou interna para acessar o arquivo.
+
+O sistema principal grava essa URL no banco de dados junto com as informações do arquivo.
+
+Fluxo de download:
+
+O sistema checa se o arquivo existe e se ainda está dentro dos 180 dias.
+
+Se estiver válido:
+
+Compacta o arquivo (.zip);
+
+Mostra mensagem de confirmação com local de download.
+
+Se estiver expirado:
+
+Mostra mensagem explicando que o prazo expirou e o arquivo não pode ser baixado.
+
+3️⃣ Aplicação (Java + Spring Boot)
+
+A aplicação é o núcleo de regras de negócio e faz a ponte entre o banco e o Web Service.
+Ela será construída em Java com o framework Spring Boot, usando:
+
+Spring Web → para criar as APIs REST;
+
+Spring Data JPA → para integrar com o MySQL;
+
+Spring Security → para autenticação e controle de usuários;
+
+Possivelmente Scheduled Tasks → para excluir automaticamente arquivos vencidos.
+
+🧩 Modelo de Domínio
+
+As principais entidades (tabelas) são:
+
+🧍 Usuario
+
+id
+
+nome
+
+email
+
+senha
+
+🔐 Permissao
+
+id
+
+nome (ex: ROLE_USER, ROLE_ADMIN)
+
+📁 Arquivo
+
+id
+
+nome_arquivo
+
+tipo (audio ou video)
+
+caminho_ws (URL do arquivo no servidor)
+
+data_upload
+
+data_expiracao
+
+usuario_id (chave estrangeira para o usuário)
+
+⚙️ Relacionamentos:
+
+Um Usuário pode ter vários Arquivos (1:N).
+
+Um Usuário pode ter várias Permissões (N:N).
+
+Cada Arquivo pertence a um único Usuário.
+
+🧮 Regras de Negócio Principais
+Regra	Descrição
+Tempo de validade	Cada arquivo tem 180 dias a partir da data de upload.
+Verificação antes do download	O sistema só libera o download se a data atual for menor que a data de expiração.
+Mensagens ao usuário	Mostra se o arquivo está dentro ou fora do prazo, e o motivo.
+Controle de acesso	Somente usuários autenticados (login e senha) podem fazer upload e download.
+Compactação	Antes do download, o arquivo pode ser enviado como .zip.
+Limpeza automática (opcional)	Um agendador pode apagar ou desativar arquivos expirados.
+🌍 Resumo do Fluxo Completo
+Usuário faz login
+       ↓
+Faz upload de áudio/vídeo (via WS)
+       ↓
+WS salva o arquivo no servidor
+       ↓
+Sistema grava metadados no MySQL (nome, tipo, data, caminho, expiração, usuário)
+       ↓
+Usuário solicita download
+       ↓
+Sistema verifica se o arquivo ainda é válido
+       ↓
+✅ Dentro do prazo → baixa arquivo compactado (.zip)
+❌ Fora do prazo → exibe mensagem de bloqueio
+
+💡 Decisões Técnicas que já definimos
+Item	Tecnologia / Solução
+Linguagem	Java
+Framework	Spring Boot
+Banco de Dados	MySQL
+ORM	Spring Data JPA / Hibernate
+Segurança	Spring Security (usuário e senha)
+Web Service	REST API (upload/download)
+Armazenamento	Servidor de arquivos (local ou nuvem)
+Tempo de expiração	180 dias
+Compressão	.zip antes do download
+Expiração automática (opcional)	Spring Scheduler
+🧭 Resumo final do que já está claro
+
+O banco de dados não guarda o vídeo/áudio, apenas as informações sobre eles;
+
+O Web Service é quem armazena fisicamente os arquivos (em disco ou nuvem);
+
+O Spring Boot gerencia a lógica de upload, download, autenticação e expiração;
+
+O sistema verifica automaticamente se o arquivo ainda é válido antes de liberar o download;
+
+Somente usuários com permissão podem acessar, baixar ou remover arquivos;
+
+Toda a arquitetura foi pensada para ser modular, segura e escalável.
