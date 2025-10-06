@@ -1,0 +1,4 @@
+spring.datasource.url=jdbc:mysql://localhost:3306/media_valt
+spring.datasource.name=admin_developer
+spring.datasource.password=1848
+
