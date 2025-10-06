@@ -8,7 +8,7 @@ public class UserLoginDTO implements Serializable{
 	
 	private String email;
 	private String senha;
-	
+
 	public UserLoginDTO() {}
 
 	public UserLoginDTO(String email, String senha) {

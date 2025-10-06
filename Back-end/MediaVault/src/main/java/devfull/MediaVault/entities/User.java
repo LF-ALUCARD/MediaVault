@@ -2,6 +2,7 @@ package devfull.MediaVault.entities;
 
 import java.util.Objects;
 
+import devfull.MediaVault.entities.enums.UserRole;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,15 +19,17 @@ public class User {
 	private String nome;
 	private String email;
 	private String senha;
+	private UserRole role;
 
 	public User() {
 	}
 
-	public User(Long id, String nome, String email, String senha) {
+	public User(Long id, String nome, String email, String senha, int role) {
 		this.id = id;
 		this.nome = nome;
 		this.email = email;
 		this.senha = senha;
+		this.role = UserRole.valueOfCode(role);
 	}
 
 	public Long getId() {
@@ -59,6 +62,14 @@ public class User {
 
 	public void setSenha(String senha) {
 		this.senha = senha;
+	}
+
+	public UserRole getRole() {
+		return role;
+	}
+
+	public void setRole(UserRole role) {
+		this.role = role;
 	}
 
 	@Override

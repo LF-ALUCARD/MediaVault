@@ -1,0 +1,23 @@
+package devfull.MediaVault.entities.DTO;
+
+import java.io.Serializable;
+
+import devfull.MediaVault.entities.User;
+import devfull.MediaVault.entities.enums.UserRole;
+
+public class UserInfoDTO implements Serializable{
+
+	private Long id;
+	private String email;
+	private UserRole role;
+	
+	public UserInfoDTO () {}
+
+	public UserInfoDTO(User obj) {
+		id = obj.getId();
+		email = obj.getEmail();
+		role = obj.getRole();
+	}
+	
+	
+}
