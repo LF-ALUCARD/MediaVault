@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import axios from 'axios'
+axios.defaults.baseURL = 'http://localhost:8080'
 
 const AuthContext = createContext({})
+
+const api = axios.create({
+  baseURL: 'http://localhost:8080'
+});
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
@@ -71,26 +77,26 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const register = async (userData) => {
-    try {
-      const response = await axios.post('/api/auth/register', userData)
-      
-      const { token, user } = response.data
-      
-      setToken(token)
-      setUser(user)
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
-      
-      return { success: true }
-    } catch (error) {
-      console.error('Erro no cadastro:', error)
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Erro ao criar conta'
-      }
-    }
+
+const register = async (userData) => {
+  console.log('Dados enviados para API:', userData);
+  try {
+    const response = await api.post('/api/auth/register', userData);
+    const { token, user } = response.data;
+    setToken(token);
+    setUser(user);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    return { success: true };
+  } catch (error) {
+    console.error('Erro no cadastro:', error);
+    return {
+      success: false,
+      error: error.response?.data?.message || 'Erro ao criar conta'
+    };
   }
+};
+
 
   const logout = () => {
     setToken(null)

@@ -19,35 +19,42 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    @Autowired
+	@Autowired
 	private GerarToken gerarToken;
 
-    @Autowired
-    private UserRepository userRepository;
+	@Autowired
+	private UserRepository userRepository;
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+			throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+		String path = request.getServletPath();
+		System.out.println("Filtro executado para: " + path);
+		
+		// Ignorar endpoints públicos
+		if (path.startsWith("/api/auth")) {
+			filterChain.doFilter(request, response);
+			return;
+		}
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (gerarToken.tokenValido(token)) {
-                String email = gerarToken.getEmailFromToken(token);
-                User user = userRepository.findByEmail(email);
+		String authHeader = request.getHeader("Authorization");
 
-                if (user != null) {
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(user, null, null);
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            }
-        }
+		if (authHeader != null && authHeader.startsWith("Bearer ")) {
+			String token = authHeader.substring(7);
+			if (gerarToken.tokenValido(token)) {
+				String email = gerarToken.getEmailFromToken(token);
+				User user = userRepository.findByEmail(email);
 
-        filterChain.doFilter(request, response);
-    }
+				if (user != null) {
+					UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user, null,
+							null);
+					authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+					SecurityContextHolder.getContext().setAuthentication(authToken);
+				}
+			}
+		}
+
+		filterChain.doFilter(request, response);
+	}
 }

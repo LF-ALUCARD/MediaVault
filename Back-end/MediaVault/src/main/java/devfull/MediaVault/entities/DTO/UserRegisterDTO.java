@@ -8,16 +8,16 @@ public class UserRegisterDTO implements Serializable {
 	
 	private String nome;
 	private String email;
-	private String senha;
+	private String password;
 	private int role;
 
 	public UserRegisterDTO() {
 	}
 
-	public UserRegisterDTO(String nome, String email, String senha, int role) {
+	public UserRegisterDTO(String nome, String email, String password, int role) {
 		this.nome = nome;
 		this.email = email;
-		this.senha = senha;
+		this.password = password;
 		this.role = role;
 	}
 
@@ -37,12 +37,12 @@ public class UserRegisterDTO implements Serializable {
 		this.email = email;
 	}
 
-	public String getSenha() {
-		return senha;
+	public String getPassword() {
+		return password;
 	}
 
-	public void setSenha(String senha) {
-		this.senha = senha;
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
 	public int getRole() {

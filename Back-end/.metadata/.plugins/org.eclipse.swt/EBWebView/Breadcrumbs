@@ -1,53 +1,159 @@
-0:10:45 Tab2 FinishNav30
-0:10:45 Tab2 PageLoad
-0:10:52 Tab2 StartNav31 #typed
-0:10:52 Tab2 FinishNav31
-0:10:52 Tab2 PageLoad
-0:10:52 Tab2 StartNav32 #typed
-0:10:52 Tab2 FinishNav32
-0:10:52 Tab2 PageLoad
-0:10:53 Tab2 StartNav33 #typed
-0:10:53 Tab2 FinishNav33
-0:10:53 Tab2 PageLoad
-0:10:54 Tab2 StartNav34 #typed
-0:10:54 Tab2 FinishNav34
-0:10:54 Tab2 PageLoad
-0:10:55 Tab2 StartNav35 #typed
-0:10:55 Tab2 FinishNav35
-0:10:55 Tab2 PageLoad
-0:10:56 Tab2 StartNav36 #typed
-0:10:56 Tab2 FinishNav36
-0:10:56 Tab2 PageLoad
-0:14:59 Tab2 StartNav37 #typed
-0:14:59 Tab2 FinishNav37
-0:14:59 Tab2 PageLoad
-0:15:02 Tab2 StartNav38 #typed
-0:15:02 Tab2 FinishNav38
-0:15:02 Tab2 PageLoad
-0:15:08 Tab2 StartNav39 #typed
-0:15:08 Tab2 FinishNav39
-0:15:08 Tab2 PageLoad
-0:15:09 Tab2 StartNav40 #typed
-0:15:09 Tab2 FinishNav40
-0:15:09 Tab2 PageLoad
-0:15:12 Tab2 StartNav41 #typed
-0:15:12 Tab2 FinishNav41
-0:15:12 Tab2 PageLoad
-0:15:44 Tab2 StartNav42 #typed
-0:15:44 Tab2 FinishNav42
-0:15:44 Tab2 PageLoad
-0:16:20 Tab2 StartNav43 #typed
-0:16:20 Tab2 FinishNav43
-0:16:20 Tab2 PageLoad
-0:16:21 Tab2 StartNav44 #typed
-0:16:21 Tab2 FinishNav44
-0:16:21 Tab2 PageLoad
-0:16:22 Tab2 StartNav45 #typed
-0:16:23 Tab2 FinishNav45
-0:16:23 Tab2 PageLoad
-0:16:23 Tab2 StartNav46 #typed
-0:16:23 Tab2 FinishNav46
-0:16:23 Tab2 PageLoad
-0:16:24 Tab2 StartNav47 #typed
-0:16:24 Tab2 FinishNav47
-0:16:24 Tab2 PageLoad
+0:57:35 Tab8 StartNav56 #typed
+0:57:35 Tab8 FinishNav56
+0:57:35 Tab8 PageLoad
+0:57:36 Tab8 StartNav57 #typed
+0:57:36 Tab8 FinishNav57
+0:57:36 Tab8 PageLoad
+0:57:36 Tab8 StartNav58 #typed
+0:57:36 Tab8 FinishNav58
+0:57:36 Tab8 PageLoad
+0:57:38 Tab8 StartNav59 #typed
+0:57:38 Tab8 FinishNav59
+0:57:38 Tab8 PageLoad
+0:57:39 Tab8 StartNav60 #typed
+0:57:39 Tab8 FinishNav60
+0:57:39 Tab8 PageLoad
+0:57:43 Tab8 StartNav61 #typed
+0:57:43 Tab8 FinishNav61
+0:57:43 Tab8 PageLoad
+0:57:45 Tab8 StartNav62 #typed
+0:57:45 Tab8 FinishNav62
+0:57:45 Tab8 PageLoad
+0:57:46 Tab8 StartNav63 #typed
+0:57:46 Tab8 FinishNav63
+0:57:46 Tab8 PageLoad
+0:57:48 Tab8 StartNav64 #typed
+0:57:48 Tab8 FinishNav64
+0:57:48 Tab8 PageLoad
+0:58:00 Tab8 StartNav65 #typed
+0:58:00 Tab8 FinishNav65
+0:58:00 Tab8 PageLoad
+0:58:07 Tab8 StartNav66 #typed
+0:58:07 Tab8 FinishNav66
+0:58:07 Tab8 PageLoad
+0:58:09 Tab8 StartNav67 #typed
+0:58:09 Tab8 FinishNav67
+0:58:09 Tab8 PageLoad
+0:58:12 Tab8 StartNav68 #typed
+0:58:12 Tab8 FinishNav68
+0:58:12 Tab8 PageLoad
+0:58:13 Tab8 StartNav69 #typed
+0:58:13 Tab8 FinishNav69
+0:58:13 Tab8 PageLoad
+0:58:14 Tab8 StartNav70 #typed
+0:58:14 Tab8 FinishNav70
+0:58:14 Tab8 PageLoad
+0:58:17 Tab8 StartNav71 #typed
+0:58:17 Tab8 FinishNav71
+0:58:17 Tab8 PageLoad
+0:58:18 Tab8 StartNav72 #typed
+0:58:18 Tab8 FinishNav72
+0:58:18 Tab8 PageLoad
+0:58:19 Tab8 StartNav73 #typed
+0:58:19 Tab8 FinishNav73
+0:58:19 Tab8 PageLoad
+0:58:24 Tab8 StartNav74 #typed
+0:58:24 Tab8 FinishNav74
+0:58:24 Tab8 PageLoad
+0:58:25 Tab8 StartNav75 #typed
+0:58:25 Tab8 FinishNav75
+0:58:25 Tab8 PageLoad
+0:58:26 Tab8 StartNav76 #typed
+0:58:26 Tab8 FinishNav76
+0:58:26 Tab8 PageLoad
+0:58:26 Tab8 StartNav77 #typed
+0:58:26 Tab8 FinishNav77
+0:58:26 Tab8 PageLoad
+0:58:27 Tab8 StartNav78 #typed
+0:58:27 Tab8 FinishNav78
+0:58:27 Tab8 PageLoad
+0:58:30 Tab8 StartNav79 #typed
+0:58:30 Tab8 FinishNav79
+0:58:30 Tab8 PageLoad
+0:58:33 Tab8 StartNav80 #typed
+0:58:33 Tab8 FinishNav80
+0:58:33 Tab8 PageLoad
+0:58:37 Tab8 StartNav81 #typed
+0:58:37 Tab8 FinishNav81
+0:58:37 Tab8 PageLoad
+0:58:38 Tab8 StartNav82 #typed
+0:58:38 Tab8 FinishNav82
+0:58:38 Tab8 PageLoad
+0:58:40 Tab8 StartNav83 #typed
+0:58:40 Tab8 FinishNav83
+0:58:40 Tab8 PageLoad
+0:58:41 Tab8 StartNav84 #typed
+0:58:41 Tab8 FinishNav84
+0:58:41 Tab8 PageLoad
+0:58:46 Tab8 StartNav85 #typed
+0:58:46 Tab8 FinishNav85
+0:58:46 Tab8 PageLoad
+0:58:47 Tab8 StartNav86 #typed
+0:58:47 Tab8 FinishNav86
+0:58:47 Tab8 PageLoad
+0:58:48 Tab8 StartNav87 #typed
+0:58:48 Tab8 FinishNav87
+0:58:48 Tab8 PageLoad
+0:58:49 Tab8 StartNav88 #typed
+0:58:49 Tab8 FinishNav88
+0:58:49 Tab8 PageLoad
+0:58:54 Tab8 StartNav89 #typed
+0:58:54 Tab8 FinishNav89
+0:58:54 Tab8 PageLoad
+0:58:56 Tab8 StartNav90 #typed
+0:58:56 Tab8 FinishNav90
+0:58:56 Tab8 PageLoad
+1:00:16 Tab8 StartNav91 #typed
+1:00:16 Tab8 FinishNav91
+1:00:16 Tab8 PageLoad
+1:56:46 Tab7 StartNav92 #typed
+1:56:46 Tab7 FinishNav92
+1:56:46 Tab7 PageLoad
+1:56:46 Tab7 StartNav93 #typed
+1:56:46 Tab7 FinishNav93
+1:56:46 Tab7 PageLoad
+1:56:48 Tab7 StartNav94 #typed
+1:56:48 Tab7 FinishNav94
+1:56:48 Tab7 PageLoad
+1:56:50 Tab7 StartNav95 #typed
+1:56:50 Tab7 FinishNav95
+1:56:50 Tab7 PageLoad
+1:57:06 Tab7 StartNav96 #typed
+1:57:06 Tab7 FinishNav96
+1:57:06 Tab7 PageLoad
+1:57:11 Tab7 StartNav97 #typed
+1:57:11 Tab7 FinishNav97
+1:57:11 Tab7 PageLoad
+1:57:13 Tab7 StartNav98 #typed
+1:57:13 Tab7 FinishNav98
+1:57:13 Tab7 PageLoad
+1:57:14 Tab7 StartNav99 #typed
+1:57:14 Tab7 FinishNav99
+1:57:14 Tab7 PageLoad
+1:57:15 Tab7 StartNav100 #typed
+1:57:15 Tab7 FinishNav100
+1:57:15 Tab7 PageLoad
+1:57:35 Tab7 StartNav101 #typed
+1:57:35 Tab7 FinishNav101
+1:57:35 Tab7 PageLoad
+1:57:43 Tab7 StartNav102 #typed
+1:57:43 Tab7 FinishNav102
+1:57:43 Tab7 PageLoad
+1:57:52 Tab7 StartNav103 #typed
+1:57:52 Tab7 FinishNav103
+1:57:52 Tab7 PageLoad
+1:57:52 Tab7 StartNav104 #typed
+1:57:52 Tab7 FinishNav104
+1:57:52 Tab7 PageLoad
+1:57:54 Tab7 StartNav105 #typed
+1:57:54 Tab7 FinishNav105
+1:57:54 Tab7 PageLoad
+1:57:59 Tab8 StartNav106 #typed
+1:57:59 Tab8 FinishNav106
+1:57:59 Tab8 PageLoad
+1:58:06 Tab8 StartNav107 #typed
+1:58:06 Tab8 FinishNav107
+1:58:06 Tab8 PageLoad
+1:58:12 Tab8 StartNav108 #typed
+1:58:12 Tab8 FinishNav108
+1:58:12 Tab8 PageLoad

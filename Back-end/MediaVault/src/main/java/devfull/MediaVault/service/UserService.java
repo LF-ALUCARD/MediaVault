@@ -56,8 +56,8 @@ public class UserService {
         User entidade = new User();
         entidade.setNome(obj.getNome());
         entidade.setEmail(obj.getEmail());
-        entidade.setRole(UserRole.valueOfCode(obj.getRole()));
-        entidade.setSenha(passwordEncoder.encode(obj.getSenha())); // Criptografar aqui
+        entidade.setRole(UserRole.valueOfCode(1));
+        entidade.setSenha(passwordEncoder.encode(obj.getPassword()));
         return entidade;
     }
 }

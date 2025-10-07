@@ -45,7 +45,7 @@ const Register = () => {
       const result = await registerUser({
         nome: data.nome,
         email: data.email,
-        password: data.password,
+        senha: data.password,
       })
       
       if (result.success) {
