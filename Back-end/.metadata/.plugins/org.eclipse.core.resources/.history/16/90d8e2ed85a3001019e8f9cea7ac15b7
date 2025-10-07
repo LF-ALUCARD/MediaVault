@@ -45,15 +45,13 @@ public class UserService {
     }
     
     public AuthResponseDTO login(UserLoginDTO obj) {
-        User entidade = findByEmail(obj.getEmail());
-
-        if (!passwordEncoder.matches(obj.getPassword(), entidade.getSenha())) {
-            throw new CredenciaisInvalidasException("Email ou senha inválidos");
-        }
-
-        String token = gerarToken.gerarToken(entidade);
-        UserInfoDTO userInfo = new UserInfoDTO(entidade);
-        return new AuthResponseDTO(token, userInfo);
+    	User entidade = findByEmail(obj.getEmail());
+    	if (entidade.getSenha().equals(obj.getSenha())) {
+            String token = gerarToken.gerarToken(entidade);
+            UserInfoDTO userInfo = new UserInfoDTO(entidade);
+            return new AuthResponseDTO(token, userInfo);
+    	}
+    	throw new CredenciaisInvalidasException("E-mail ou senha inválidos");
     }
     
     public User findByEmail(String email) {

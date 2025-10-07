@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import devfull.MediaVault.entities.DTO.AuthResponseDTO;
-import devfull.MediaVault.entities.DTO.UserLoginDTO;
 import devfull.MediaVault.entities.DTO.UserRegisterDTO;
 import devfull.MediaVault.service.UserService;
 
@@ -27,11 +26,5 @@ public class UserController {
 		AuthResponseDTO resposta = servico.register(obj);
 		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(resposta.getUser().getId()).toUri();
 		return ResponseEntity.created(uri).body(resposta);
-	}
-	
-	@PostMapping(value = "/login")
-	public ResponseEntity<AuthResponseDTO> login(@RequestBody UserLoginDTO obj){
-		AuthResponseDTO resposta = servico.login(obj);
-		return ResponseEntity.ok().body(resposta);
 	}
 }

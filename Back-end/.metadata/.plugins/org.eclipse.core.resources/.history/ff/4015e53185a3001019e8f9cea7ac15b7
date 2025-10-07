@@ -8,7 +8,6 @@ import devfull.MediaVault.entities.User;
 import devfull.MediaVault.entities.DTO.AuthResponseDTO;
 import devfull.MediaVault.entities.DTO.UserInfoDTO;
 import devfull.MediaVault.entities.DTO.UserRegisterDTO;
-import devfull.MediaVault.entities.DTO.UserLoginDTO;
 import devfull.MediaVault.entities.enums.UserRole;
 import devfull.MediaVault.repositories.UserRepository;
 import devfull.MediaVault.security.GerarToken;
@@ -45,15 +44,7 @@ public class UserService {
     }
     
     public AuthResponseDTO login(UserLoginDTO obj) {
-        User entidade = findByEmail(obj.getEmail());
-
-        if (!passwordEncoder.matches(obj.getPassword(), entidade.getSenha())) {
-            throw new CredenciaisInvalidasException("Email ou senha inválidos");
-        }
-
-        String token = gerarToken.gerarToken(entidade);
-        UserInfoDTO userInfo = new UserInfoDTO(entidade);
-        return new AuthResponseDTO(token, userInfo);
+    	User entidade = findByEmail(obj.ge)
     }
     
     public User findByEmail(String email) {

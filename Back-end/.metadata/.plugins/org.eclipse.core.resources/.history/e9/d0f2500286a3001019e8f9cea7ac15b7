@@ -47,7 +47,7 @@ public class UserService {
     public AuthResponseDTO login(UserLoginDTO obj) {
         User entidade = findByEmail(obj.getEmail());
 
-        if (!passwordEncoder.matches(obj.getPassword(), entidade.getSenha())) {
+        if (!passwordEncoder.matches(obj.getSenha(), entidade.getSenha())) {
             throw new CredenciaisInvalidasException("Email ou senha inválidos");
         }
 

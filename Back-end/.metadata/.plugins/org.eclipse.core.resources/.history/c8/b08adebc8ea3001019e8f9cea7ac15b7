@@ -8,7 +8,7 @@ import devfull.MediaVault.entities.enums.UserRole;
 public class UserInfoDTO implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-
+	
 	private Long id;
 	private String nome;
 	private String email;
@@ -46,14 +46,6 @@ public class UserInfoDTO implements Serializable {
 
 	public void setRole(UserRole role) {
 		this.role = role;
-	}
-
-	public String getNome() {
-		return nome;
-	}
-
-	public void setNome(String nome) {
-		this.nome = nome;
 	}
 
 }

@@ -32,25 +32,32 @@ export const AuthProvider = ({ children }) => {
   }, [token])
 
   // Verificar se há um token válido ao carregar a aplicação
-  useEffect(() => {
-    const checkAuth = async () => {
-      const savedToken = localStorage.getItem('token')
-      const savedUser = localStorage.getItem('user')
-      
-      if (savedToken && savedUser) {
-        try {
-          setToken(savedToken)
-          setUser(JSON.parse(savedUser))
-        } catch (error) {
-          console.error('Erro ao recuperar dados do usuário:', error)
-          logout()
-        }
+useEffect(() => {
+  const checkAuth = async () => {
+    const savedToken = localStorage.getItem('token')
+
+    if (savedToken) {
+      try {
+        const response = await axios.get('/api/auth/me', {
+          headers: {
+            Authorization: `Bearer ${savedToken}`,
+          },
+        })
+
+        setToken(savedToken)
+        setUser(response.data.user)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+      } catch (error) {
+        console.error('Token inválido ou expirado:', error)
+        logout()
       }
-      setLoading(false)
     }
 
-    checkAuth()
-  }, [])
+    setLoading(false)
+  }
+  checkAuth()
+}, [])
+
 
   const login = async (email, password) => {
     try {

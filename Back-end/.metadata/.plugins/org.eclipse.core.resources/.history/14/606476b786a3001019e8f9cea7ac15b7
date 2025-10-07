@@ -32,6 +32,7 @@ public class UserController {
 	@PostMapping(value = "/login")
 	public ResponseEntity<AuthResponseDTO> login(@RequestBody UserLoginDTO obj){
 		AuthResponseDTO resposta = servico.login(obj);
-		return ResponseEntity.ok().body(resposta);
+		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(resposta.getUser().getId()).toUri();
+		return ResponseEntity.created(uri).body(resposta);
 	}
 }
