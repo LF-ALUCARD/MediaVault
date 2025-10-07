@@ -21,6 +21,7 @@
     <fullyQualifiedTypeName name="java.lang.IllegalArgumentException"/>
     <fullyQualifiedTypeName name="java.io.Serializable"/>
     <fullyQualifiedTypeName name="org.springframework.data.jpa.repository.JpaRepository"/>
-    <fullyQualifiedTypeName name="devfull.MediaVault.entities.User"/>
     <fullyQualifiedTypeName name="org.springframework.beans.factory.annotation.Autowired"/>
+    <fullyQualifiedTypeName name="devfull.MediaVault.entities.User"/>
+    <fullyQualifiedTypeName name="devfull.MediaVault.entities.enums.UserRole"/>
 </qualifiedTypeNameHistroy>

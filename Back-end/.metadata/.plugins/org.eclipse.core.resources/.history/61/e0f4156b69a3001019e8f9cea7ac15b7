@@ -1,0 +1,5 @@
+package devfull.MediaVault.service.exceptions;
+
+public class CredenciaisInvalidasException {
+
+}
