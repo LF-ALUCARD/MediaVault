@@ -1,5 +1,0 @@
-package devfull.MediaVault.repositories;
-
-public interface UserRepository {
-
-}

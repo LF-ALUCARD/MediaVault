@@ -1,5 +1,0 @@
-package devfull.MediaVault.secury;
-
-public class JwtAuthFilter {
-
-}
