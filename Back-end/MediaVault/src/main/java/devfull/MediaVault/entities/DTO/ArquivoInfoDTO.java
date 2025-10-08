@@ -1,26 +1,14 @@
-package devfull.MediaVault.entities;
+package devfull.MediaVault.entities.DTO;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import devfull.MediaVault.entities.Arquivo;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-
-@Entity
-@Table(name = "tb_arquivo")
-public class Arquivo implements Serializable {
+public class ArquivoInfoDTO implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	
 	private Long id;
 	private String nome;
 	private String tipo;
@@ -31,29 +19,21 @@ public class Arquivo implements Serializable {
 	private LocalDate data_expiracao;
 	private String status;
 	private Integer dias_restantes;
-	
-	@ManyToOne
-	@JoinColumn(name = "usuario_id")
-	@JsonBackReference
-	private User user;
 
-	public Arquivo() {
+	public ArquivoInfoDTO() {
 	}
 
-	public Arquivo(Long id, String nome, String tipo, Long tamanho, String tamanho_formatado, String caminho_ws,
-			LocalDate data_upload, LocalDate data_expiracao, String status, Integer dias_restantes, User user) {
-		super();
-		this.id = id;
-		this.nome = nome;
-		this.tipo = tipo;
-		this.tamanho = tamanho;
-		this.tamanho_formatado = tamanho_formatado;
-		this.caminho_ws = caminho_ws;
-		this.data_upload = data_upload;
-		this.data_expiracao = data_expiracao;
-		this.status = status;
-		this.dias_restantes = dias_restantes;
-		this.user = user;
+	public ArquivoInfoDTO(Arquivo obj) {
+		id = obj.getId();
+		nome = obj.getNome();
+		tipo = obj.getTipo();
+		tamanho = obj.getTamanho();
+		tamanho_formatado = obj.getTamanho_formatado();
+		caminho_ws = obj.getCaminho_ws();
+		data_upload = obj.getData_upload();
+		data_expiracao = obj.getData_expiracao();
+		status = obj.getStatus();
+		dias_restantes = obj.getDias_restantes();
 	}
 
 	public Long getId() {
@@ -134,14 +114,6 @@ public class Arquivo implements Serializable {
 
 	public void setDias_restantes(Integer dias_restantes) {
 		this.dias_restantes = dias_restantes;
-	}
-
-	public User getUser() {
-		return user;
-	}
-
-	public void setUser(User user) {
-		this.user = user;
 	}
 
 }

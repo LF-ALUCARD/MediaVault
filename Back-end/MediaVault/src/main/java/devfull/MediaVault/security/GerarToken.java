@@ -4,15 +4,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.crypto.SecretKey;
+
 import org.springframework.stereotype.Component;
 
+import devfull.MediaVault.entities.Arquivo;
 import devfull.MediaVault.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-
-import javax.crypto.SecretKey;
 
 @Component
 public class GerarToken {
@@ -29,6 +30,21 @@ public class GerarToken {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(user.getEmail())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(secretKey)
+                .compact();
+    }
+    
+    public String gerarToken(Arquivo obj) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", obj.getId());
+        claims.put("nome", obj.getNome());
+        claims.put("tipo", obj.getTipo());
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(obj.getNome())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(secretKey)

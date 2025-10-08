@@ -7,12 +7,13 @@ import org.springframework.stereotype.Service;
 import devfull.MediaVault.entities.User;
 import devfull.MediaVault.entities.DTO.AuthResponseDTO;
 import devfull.MediaVault.entities.DTO.UserInfoDTO;
-import devfull.MediaVault.entities.DTO.UserRegisterDTO;
 import devfull.MediaVault.entities.DTO.UserLoginDTO;
+import devfull.MediaVault.entities.DTO.UserRegisterDTO;
 import devfull.MediaVault.entities.enums.UserRole;
 import devfull.MediaVault.repositories.UserRepository;
 import devfull.MediaVault.security.GerarToken;
 import devfull.MediaVault.service.exceptions.CredenciaisInvalidasException;
+import devfull.MediaVault.service.exceptions.EmailDuplicadoException;
 
 @Service
 public class UserService {
@@ -38,6 +39,9 @@ public class UserService {
 
     public AuthResponseDTO register(UserRegisterDTO obj) {
         User entidade = converter(obj);
+        if(repositor.existsByEmail(obj.getEmail())) {
+        	throw new EmailDuplicadoException ("E-mail já existente");
+        }
         User savedUser = repositor.save(entidade);
         String token = gerarToken.gerarToken(savedUser);
         UserInfoDTO userInfo = new UserInfoDTO(savedUser);
