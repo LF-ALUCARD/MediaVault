@@ -7,6 +7,6 @@ import devfull.MediaVault.entities.User;
 
 public interface ArquivoRepository extends JpaRepository<Arquivo, Long>{
 
-	User findByNome(String email);
-	Boolean existsByNome(String email); 
+	User findByNome(String Nome);
+	Boolean existsByNomeAndUserId(String Nome, Long id); 
 }

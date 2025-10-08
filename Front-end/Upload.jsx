@@ -14,13 +14,15 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react'
+import axios from 'axios'
 
 const Upload = () => {
   const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState({})
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+    console.log('📁 Arquivos selecionados:', acceptedFiles.length)
+    
     // Processar arquivos aceitos
     const newFiles = acceptedFiles.map((file) => ({
       id: Math.random().toString(36).substr(2, 9),
@@ -28,7 +30,7 @@ const Upload = () => {
       name: file.name,
       size: file.size,
       type: file.type.startsWith('video/') ? 'video' : 'audio',
-      status: 'ready', // ready, uploading, completed, error
+      status: 'ready',
       progress: 0,
       error: null
     }))
@@ -37,7 +39,10 @@ const Upload = () => {
 
     // Processar arquivos rejeitados
     if (rejectedFiles.length > 0) {
-      console.log('Arquivos rejeitados:', rejectedFiles)
+      console.log('❌ Arquivos rejeitados:', rejectedFiles)
+      rejectedFiles.forEach(rejection => {
+        console.log('Arquivo rejeitado:', rejection.file.name, 'Motivos:', rejection.errors)
+      })
     }
   }, [])
 
@@ -45,13 +50,14 @@ const Upload = () => {
     onDrop,
     accept: {
       'video/*': ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm'],
-      'audio/*': ['.mp3', '.wav', '.aac', '.ogg', '.m4a', '.flac']
+      'audio/*': ['.mp3', '.wav', '.aac', '.ogg', '.m4a', '.flac', '.opus']
     },
     maxSize: 500 * 1024 * 1024, // 500MB
     multiple: true
   })
 
   const removeFile = (fileId) => {
+    console.log('🗑️ Removendo arquivo:', fileId)
     setFiles((prev) => prev.filter((file) => file.id !== fileId))
   }
 
@@ -71,69 +77,117 @@ const Upload = () => {
     )
   }
 
-  const simulateUpload = async (file) => {
-    return new Promise((resolve) => {
-      let progress = 0
-      const interval = setInterval(() => {
-        progress += Math.random() * 15
-        if (progress >= 100) {
-          progress = 100
-          clearInterval(interval)
-          resolve()
-        }
-        
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === file.id
-              ? { ...f, progress: Math.round(progress) }
-              : f
-          )
-        )
-      }, 200)
-    })
-  }
-
+  // FUNÇÃO DE UPLOAD COMPLETAMENTE REVISADA
   const uploadFiles = async () => {
-    if (files.length === 0) return
+    console.log('🚀 FUNÇÃO UPLOADFILES EXECUTADA!')
+    console.log('📊 Total de arquivos:', files.length)
+    console.log('📋 Lista de arquivos:', files)
+    
+    if (files.length === 0) {
+      console.log('⚠️ Nenhum arquivo para upload')
+      return
+    }
 
     setUploading(true)
+    console.log('🔄 Estado uploading definido como true')
 
-    // Marcar todos os arquivos como uploading
+    // Marcar todos os arquivos como "uploading"
     setFiles((prev) =>
       prev.map((file) => ({ ...file, status: 'uploading', progress: 0 }))
     )
 
     try {
-      // Simular upload de cada arquivo
-      for (const file of files) {
-        await simulateUpload(file)
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        console.log(`\n📤 PROCESSANDO ARQUIVO ${i + 1}/${files.length}:`, file.name)
         
-        // Marcar como concluído
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === file.id
-              ? { ...f, status: 'completed', progress: 100 }
-              : f
+        try {
+          // Criar FormData
+          const formData = new FormData()
+          formData.append('file', file.file)
+          formData.append('nome', file.name)
+          formData.append('tipo', file.type)
+          formData.append('tamanho', file.size.toString())
+          formData.append('tamanhoFormatado', formatFileSize(file.size))
+
+          console.log('📋 Dados do FormData:')
+          console.log('  - Nome:', file.name)
+          console.log('  - Tipo:', file.type)
+          console.log('  - Tamanho:', file.size)
+          console.log('  - Tamanho formatado:', formatFileSize(file.size))
+          console.log('  - Arquivo real:', file.file)
+
+          console.log('🌐 Fazendo requisição para: http://localhost:8080/api/files/upload')
+
+          // Fazer a requisição
+          const response = await axios.post('http://localhost:8080/api/files/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              // Se precisar de autenticação, descomente:
+              // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            onUploadProgress: (progressEvent) => {
+              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              console.log(`📈 Progresso do arquivo ${file.name}: ${progress}%`)
+              
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === file.id ? { ...f, progress } : f
+                )
+              )
+            },
+            timeout: 300000, // 5 minutos
+          })
+
+          console.log('✅ UPLOAD BEM-SUCEDIDO!')
+          console.log('📥 Resposta da API:', response.data)
+
+          // Marcar como concluído
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === file.id ? { ...f, status: 'completed', progress: 100 } : f
+            )
           )
-        )
+
+        } catch (fileError) {
+          console.error(`❌ ERRO NO UPLOAD DO ARQUIVO ${file.name}:`, fileError)
+          
+          let errorMessage = 'Erro no upload'
+          
+          if (fileError.response) {
+            console.error('📄 Resposta de erro da API:', fileError.response.data)
+            console.error('🔢 Status do erro:', fileError.response.status)
+            errorMessage = fileError.response.data?.message || `Erro ${fileError.response.status}`
+          } else if (fileError.request) {
+            console.error('🌐 Erro de rede - sem resposta do servidor:', fileError.request)
+            errorMessage = 'Erro de conexão com o servidor'
+          } else {
+            console.error('⚠️ Erro desconhecido:', fileError.message)
+            errorMessage = fileError.message || 'Erro desconhecido'
+          }
+
+          // Marcar como erro
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === file.id ? { ...f, status: 'error', error: errorMessage } : f
+            )
+          )
+        }
       }
 
-      // Limpar arquivos após 2 segundos
-      setTimeout(() => {
-        setFiles([])
-      }, 2000)
+      console.log('🎉 PROCESSO DE UPLOAD FINALIZADO!')
 
-    } catch (error) {
-      console.error('Erro no upload:', error)
-      setFiles((prev) =>
-        prev.map((file) => ({
-          ...file,
-          status: 'error',
-          error: 'Erro no upload'
-        }))
-      )
+      // Limpar arquivos concluídos após 3 segundos
+      setTimeout(() => {
+        console.log('🧹 Limpando arquivos concluídos...')
+        setFiles(prev => prev.filter(f => f.status !== 'completed'))
+      }, 3000)
+
+    } catch (generalError) {
+      console.error('🚨 ERRO GERAL NO PROCESSO DE UPLOAD:', generalError)
     } finally {
       setUploading(false)
+      console.log('✅ Estado uploading definido como false')
     }
   }
 
@@ -147,6 +201,73 @@ const Upload = () => {
         return <AlertCircle className="h-4 w-4 text-red-500" />
       default:
         return null
+    }
+  }
+
+  // Função para retry de arquivos com erro
+  const retryFile = async (fileId) => {
+    console.log('🔄 Tentando novamente arquivo:', fileId)
+    
+    const fileToRetry = files.find(f => f.id === fileId)
+    if (!fileToRetry) {
+      console.error('❌ Arquivo não encontrado para retry:', fileId)
+      return
+    }
+
+    setFiles(prev => 
+      prev.map(f => 
+        f.id === fileId ? { ...f, status: 'uploading', progress: 0, error: null } : f
+      )
+    )
+
+    try {
+      const formData = new FormData()
+      formData.append('file', fileToRetry.file)
+      formData.append('nome', fileToRetry.name)
+      formData.append('tipo', fileToRetry.type)
+      formData.append('tamanho', fileToRetry.size.toString())
+      formData.append('tamanhoFormatado', formatFileSize(fileToRetry.size))
+
+      console.log('🔄 Reenviando arquivo:', fileToRetry.name)
+
+      const response = await axios.post('http://localhost:8080/api/files/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileId ? { ...f, progress } : f
+            )
+          )
+        },
+        timeout: 300000,
+      })
+
+      console.log('✅ Retry bem-sucedido:', response.data)
+
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, status: 'completed', progress: 100 } : f
+        )
+      )
+
+    } catch (error) {
+      console.error('❌ Erro no retry:', error)
+      
+      let errorMessage = 'Erro no upload'
+      if (error.response) {
+        errorMessage = error.response.data?.message || `Erro ${error.response.status}`
+      } else if (error.request) {
+        errorMessage = 'Erro de conexão com o servidor'
+      }
+
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, status: 'error', error: errorMessage } : f
+        )
+      )
     }
   }
 
@@ -192,7 +313,7 @@ const Upload = () => {
                 </div>
               )}
               <div className="text-xs text-muted-foreground space-y-1">
-                <p>Formatos suportados: MP4, AVI, MOV, MP3, WAV, AAC</p>
+                <p>Formatos suportados: MP4, AVI, MOV, MP3, WAV, AAC, OPUS</p>
                 <p>Tamanho máximo: 500MB por arquivo</p>
               </div>
             </div>
@@ -212,7 +333,10 @@ const Upload = () => {
                 </CardDescription>
               </div>
               <Button
-                onClick={uploadFiles}
+                onClick={() => {
+                  console.log('🔘 BOTÃO ENVIAR TODOS CLICADO!')
+                  uploadFiles()
+                }}
                 disabled={uploading || files.every(f => f.status === 'completed')}
                 className="min-w-[120px]"
               >
@@ -256,6 +380,16 @@ const Upload = () => {
                             disabled={uploading}
                           >
                             <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {file.status === 'error' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => retryFile(file.id)}
+                            disabled={uploading}
+                          >
+                            Tentar Novamente
                           </Button>
                         )}
                       </div>
