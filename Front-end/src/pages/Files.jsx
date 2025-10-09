@@ -44,8 +44,7 @@ const Files = () => {
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const token = localStorage.getItem('token'); // Assumindo que o token está no localStorage
-        if (!token) {
+        if (!localStorage.getItem('token')) {
           setError('Token de autenticação não encontrado. Por favor, faça login.');
           setLoading(false);
           return;
@@ -53,7 +52,7 @@ const Files = () => {
 
         const response = await fetch('http://localhost:8080/api/files', {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
           },
         } );
@@ -63,7 +62,7 @@ const Files = () => {
         }
         const data = await response.json();
         
-        const processedData = data.map(file => {
+        const processedData = data.map((file, index) => {
           const expiryDate = new Date(file.expiryDate);
           const today = new Date();
           const diffTime = expiryDate.getTime() - today.getTime();
@@ -76,7 +75,11 @@ const Files = () => {
             status = 'expiring';
           }
 
-          return { ...file, daysRemaining: diffDays, status };
+          return { 
+            ...file, 
+            daysRemaining: diffDays, 
+            status 
+          };
         });
         setFiles(processedData);
       } catch (e) {
@@ -150,13 +153,91 @@ const Files = () => {
     return new Date(dateString).toLocaleDateString('pt-BR')
   }
 
-  const handleDownload = (file) => {
+  const handleDownload = async (file) => {
     if (file.status === 'expired') {
       alert('Este arquivo expirou e não pode mais ser baixado.')
       return
     }
     
-    alert(`Iniciando download de ${file.name}...`)
+    if (!file.id) {
+      alert("Erro: ID do arquivo não encontrado.");
+      return;
+    }
+    
+    try {
+      if (!localStorage.getItem("token")) {
+        alert("Token de autenticação não encontrado. Por favor, faça login.");
+        return;
+      }
+
+      // Fazer a requisição para o endpoint de download
+      const response = await fetch(`http://localhost:8080/api/files/${file.id}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro no download: ${response.status} ${response.statusText}`);
+      }
+
+      // Debug: verificar headers da resposta
+      console.log('Headers da resposta:');
+      response.headers.forEach((value, key) => {
+        console.log(`${key}: ${value}`);
+      });
+
+      // Obter o blob do arquivo
+      const blob = await response.blob();
+      console.log('Tipo do blob:', blob.type);
+      console.log('Tamanho do blob:', blob.size);
+      
+      // Verificar se é um arquivo ZIP baseado no Content-Type ou nome do arquivo
+      const contentType = response.headers.get('content-type');
+      const contentDisposition = response.headers.get('content-disposition');
+      
+      console.log('Content-Type:', contentType);
+      console.log('Content-Disposition:', contentDisposition);
+      
+      // Determinar o nome do arquivo para download
+      let downloadName = file.name;
+      
+      // Se o Content-Type indica ZIP, ajustar a extensão
+      if (contentType && contentType.includes('application/zip')) {
+        if (!downloadName.endsWith('.zip')) {
+          downloadName = downloadName.replace(/\.[^/.]+$/, '') + '.zip';
+        }
+      }
+      
+      // Se há Content-Disposition, extrair o nome do arquivo
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          downloadName = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+      
+      console.log('Nome do arquivo para download:', downloadName);
+      
+      // Criar URL temporária para o blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Criar elemento de link temporário para iniciar o download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = downloadName;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpar recursos
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Erro ao fazer download do arquivo:', error);
+      alert(`Erro ao fazer download: ${error.message}`);
+    }
   }
 
   const handleDelete = (fileId) => {

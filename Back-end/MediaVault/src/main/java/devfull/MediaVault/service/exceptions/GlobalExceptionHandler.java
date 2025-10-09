@@ -46,4 +46,20 @@ public class GlobalExceptionHandler {
 	    body.put("error", "INVALID_FILE");
 	    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
 	}
+	
+	@ExceptionHandler(RecursoNaoEncontradoException.class)
+	public ResponseEntity<Map<String, Object>> handleRecursoNaoEncontrado(RecursoNaoEncontradoException ex) {
+	    Map<String, Object> body = new HashMap<>();
+	    body.put("message", ex.getMessage());
+	    body.put("error", "FILE_NOT_FOUND");
+	    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+	}
+
+	@ExceptionHandler(AcessoNegadoException.class)
+	public ResponseEntity<Map<String, Object>> handleAcessoNegado(AcessoNegadoException ex) {
+	    Map<String, Object> body = new HashMap<>();
+	    body.put("message", ex.getMessage());
+	    body.put("error", "FORBIDDEN");
+	    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+	}
 }

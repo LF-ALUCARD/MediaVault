@@ -9,6 +9,7 @@ public class ArquivoInfoDTO implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	private Long id;
 	private String name;
 	private String type;
 	private String size;
@@ -21,6 +22,7 @@ public class ArquivoInfoDTO implements Serializable {
 	}
 
 	public ArquivoInfoDTO(Arquivo obj) {
+		id = obj.getId();
 		name = obj.getNome();
 		type = obj.getTipo();
 		size = obj.getTamanho_formatado();
@@ -28,6 +30,14 @@ public class ArquivoInfoDTO implements Serializable {
 		expiryDate = obj.getData_expiracao();
 		status = obj.getStatus();
 		daysRemaining = obj.getDias_restantes();
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
 	}
 
 	public String getName() {
