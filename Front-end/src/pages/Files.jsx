@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,70 +37,57 @@ const Files = () => {
   const [filterType, setFilterType] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
   const [sortBy, setSortBy] = useState('date')
+  const [files, setFiles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Dados simulados - em produção viriam da API
-  const [files] = useState([
-    {
-      id: 1,
-      name: 'apresentacao_projeto.mp4',
-      type: 'video',
-      size: '45.2 MB',
-      uploadDate: '2024-10-01',
-      expiryDate: '2025-03-30',
-      status: 'valid',
-      daysRemaining: 177
-    },
-    {
-      id: 2,
-      name: 'reuniao_equipe.mp3',
-      type: 'audio',
-      size: '12.8 MB',
-      uploadDate: '2024-09-28',
-      expiryDate: '2025-03-27',
-      status: 'valid',
-      daysRemaining: 174
-    },
-    {
-      id: 3,
-      name: 'entrevista_cliente.wav',
-      type: 'audio',
-      size: '89.1 MB',
-      uploadDate: '2024-09-15',
-      expiryDate: '2025-03-14',
-      status: 'expiring',
-      daysRemaining: 161
-    },
-    {
-      id: 4,
-      name: 'demo_produto.mp4',
-      type: 'video',
-      size: '156.7 MB',
-      uploadDate: '2024-04-10',
-      expiryDate: '2024-10-07',
-      status: 'expired',
-      daysRemaining: -3
-    },
-    {
-      id: 5,
-      name: 'podcast_episodio_01.mp3',
-      type: 'audio',
-      size: '67.4 MB',
-      uploadDate: '2024-09-20',
-      expiryDate: '2025-03-19',
-      status: 'valid',
-      daysRemaining: 166
-    },
-    {
-      id: 6,
-      name: 'webinar_marketing.mp4',
-      type: 'video',
-      size: '234.8 MB',
-      uploadDate: '2024-08-15',
-      expiryDate: '2025-02-12',
-      status: 'expiring',
-      daysRemaining: 131
-    }
-  ])
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const token = localStorage.getItem('token'); // Assumindo que o token está no localStorage
+        if (!token) {
+          setError('Token de autenticação não encontrado. Por favor, faça login.');
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch('http://localhost:8080/api/files', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        } );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        const processedData = data.map(file => {
+          const expiryDate = new Date(file.expiryDate);
+          const today = new Date();
+          const diffTime = expiryDate.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          let status = 'valid';
+          if (diffDays <= 0) {
+            status = 'expired';
+          } else if (diffDays <= 30) {
+            status = 'expiring';
+          }
+
+          return { ...file, daysRemaining: diffDays, status };
+        });
+        setFiles(processedData);
+      } catch (e) {
+        setError('Falha ao carregar arquivos: ' + e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFiles();
+  }, []);
 
   const filteredFiles = files.filter((file) => {
     const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -169,14 +156,13 @@ const Files = () => {
       return
     }
     
-    // Simular download
     alert(`Iniciando download de ${file.name}...`)
   }
 
   const handleDelete = (fileId) => {
     if (confirm('Tem certeza que deseja excluir este arquivo?')) {
-      // Simular exclusão
       alert('Arquivo excluído com sucesso!')
+      setFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
     }
   }
 
@@ -189,6 +175,27 @@ const Files = () => {
   }
 
   const statusCounts = getStatusCounts()
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-lg font-medium">Carregando arquivos...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
