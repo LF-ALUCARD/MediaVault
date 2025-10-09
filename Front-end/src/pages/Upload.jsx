@@ -17,6 +17,8 @@ import {
 import axios from 'axios'
 
 const Upload = () => {
+  console.log('🔥 COMPONENTE UPLOAD CARREGADO!')
+  
   const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
 
@@ -30,11 +32,12 @@ const Upload = () => {
       name: file.name,
       size: file.size,
       type: file.type.startsWith('video/') ? 'video' : 'audio',
-      status: 'ready',
+      status: 'ready', // ready, uploading, completed, error
       progress: 0,
       error: null
     }))
 
+    console.log('📋 Novos arquivos processados:', newFiles)
     setFiles((prev) => [...prev, ...newFiles])
 
     // Processar arquivos rejeitados
@@ -77,11 +80,10 @@ const Upload = () => {
     )
   }
 
-  // FUNÇÃO DE UPLOAD COMPLETAMENTE REVISADA
+  // FUNÇÃO DE UPLOAD REAL PARA SUA API SPRING BOOT
   const uploadFiles = async () => {
-    console.log('🚀 FUNÇÃO UPLOADFILES EXECUTADA!')
+    console.log('🚀 INICIANDO UPLOAD REAL!')
     console.log('📊 Total de arquivos:', files.length)
-    console.log('📋 Lista de arquivos:', files)
     
     if (files.length === 0) {
       console.log('⚠️ Nenhum arquivo para upload')
@@ -89,14 +91,15 @@ const Upload = () => {
     }
 
     setUploading(true)
-    console.log('🔄 Estado uploading definido como true')
+    console.log('🔄 Estado uploading = true')
 
-    // Marcar todos os arquivos como "uploading"
+    // Marcar todos os arquivos como uploading
     setFiles((prev) =>
       prev.map((file) => ({ ...file, status: 'uploading', progress: 0 }))
     )
 
     try {
+      // Upload de cada arquivo individualmente
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
         console.log(`\n📤 PROCESSANDO ARQUIVO ${i + 1}/${files.length}:`, file.name)
@@ -110,25 +113,25 @@ const Upload = () => {
           formData.append('tamanho', file.size.toString())
           formData.append('tamanhoFormatado', formatFileSize(file.size))
 
-          console.log('📋 Dados do FormData:')
-          console.log('  - Nome:', file.name)
-          console.log('  - Tipo:', file.type)
-          console.log('  - Tamanho:', file.size)
-          console.log('  - Tamanho formatado:', formatFileSize(file.size))
-          console.log('  - Arquivo real:', file.file)
+          console.log('📋 FormData criado:')
+          console.log('  - file:', file.file)
+          console.log('  - nome:', file.name)
+          console.log('  - tipo:', file.type)
+          console.log('  - tamanho:', file.size.toString())
+          console.log('  - tamanhoFormatado:', formatFileSize(file.size))
 
           console.log('🌐 Fazendo requisição para: http://localhost:8080/api/files/upload')
 
-          // Fazer a requisição
+          // Fazer a requisição para sua API Spring Boot
           const response = await axios.post('http://localhost:8080/api/files/upload', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
               // Se precisar de autenticação, descomente:
-              // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+               'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             onUploadProgress: (progressEvent) => {
               const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-              console.log(`📈 Progresso do arquivo ${file.name}: ${progress}%`)
+              console.log(`📈 Progresso ${file.name}: ${progress}%`)
               
               setFiles((prev) =>
                 prev.map((f) =>
@@ -159,7 +162,7 @@ const Upload = () => {
             console.error('🔢 Status do erro:', fileError.response.status)
             errorMessage = fileError.response.data?.message || `Erro ${fileError.response.status}`
           } else if (fileError.request) {
-            console.error('🌐 Erro de rede - sem resposta do servidor:', fileError.request)
+            console.error('🌐 Erro de rede - sem resposta do servidor')
             errorMessage = 'Erro de conexão com o servidor'
           } else {
             console.error('⚠️ Erro desconhecido:', fileError.message)
@@ -187,7 +190,7 @@ const Upload = () => {
       console.error('🚨 ERRO GERAL NO PROCESSO DE UPLOAD:', generalError)
     } finally {
       setUploading(false)
-      console.log('✅ Estado uploading definido como false')
+      console.log('✅ Estado uploading = false')
     }
   }
 
@@ -270,6 +273,8 @@ const Upload = () => {
       )
     }
   }
+
+  console.log('🎨 Renderizando componente - files:', files.length)
 
   return (
     <div className="space-y-6">
