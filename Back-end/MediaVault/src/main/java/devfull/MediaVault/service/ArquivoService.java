@@ -44,7 +44,8 @@ public class ArquivoService {
 			}
 
 			// Validação de tipo
-			String[] formatosPermitidos = { "mp4", "avi", "mov", "mp3", "wav", "aac", "ogg", "m4a", "flac" };
+			String[] formatosPermitidos = { "mp4", "avi", "mov", "mp3", "wav", "aac", "ogg", "m4a", "flac", "jpg",
+					"jpeg", "png", "gif", "bmp", "webp" };
 			String extensao = obj.getNome().substring(obj.getNome().lastIndexOf(".") + 1).toLowerCase();
 			boolean tipoValido = Arrays.stream(formatosPermitidos).anyMatch(extensao::equals);
 
@@ -131,9 +132,20 @@ public class ArquivoService {
 		}
 
 		String basePath = "C:\\midia";
-		String tipoPasta = obj.getTipo().equalsIgnoreCase("video") ? "video" : "audio";
-		Path pastaDestino = Paths.get(basePath, tipoPasta);
 
+		// Define a pasta com base no tipo
+		String tipoPasta;
+		if (obj.getTipo().equalsIgnoreCase("video")) {
+			tipoPasta = "video";
+		} else if (obj.getTipo().equalsIgnoreCase("audio")) {
+			tipoPasta = "audio";
+		} else if (obj.getTipo().equalsIgnoreCase("image")) {
+			tipoPasta = "image";
+		} else {
+			throw new IllegalArgumentException("Tipo de arquivo inválido: " + obj.getTipo());
+		}
+
+		Path pastaDestino = Paths.get(basePath, tipoPasta);
 		Files.createDirectories(pastaDestino); // cria se não existir
 
 		// Gera nome físico único

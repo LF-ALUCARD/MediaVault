@@ -9,6 +9,7 @@ import {
   File,
   Video,
   Music,
+  Image,
   X,
   CheckCircle,
   AlertCircle,
@@ -26,16 +27,28 @@ const Upload = () => {
     console.log('📁 Arquivos selecionados:', acceptedFiles.length)
     
     // Processar arquivos aceitos
-    const newFiles = acceptedFiles.map((file) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-      name: file.name,
-      size: file.size,
-      type: file.type.startsWith('video/') ? 'video' : 'audio',
-      status: 'ready', // ready, uploading, completed, error
-      progress: 0,
-      error: null
-    }))
+    const newFiles = acceptedFiles.map(file => {
+      // Determinar o tipo do arquivo baseado no MIME type
+      let tipo = 'audio'; // padrão
+      if (file.type.startsWith('video/')) {
+        tipo = 'video';
+      } else if (file.type.startsWith('image/')) {
+        tipo = 'image';
+      } else if (file.type.startsWith('audio/')) {
+        tipo = 'audio';
+      }
+
+      return {
+        id: Math.random().toString(36).substr(2, 9),
+        file,
+        name: file.name,
+        size: file.size,
+        type: tipo,
+        status: 'ready',
+        progress: 0,
+        error: null
+      };
+    });
 
     console.log('📋 Novos arquivos processados:', newFiles)
     setFiles((prev) => [...prev, ...newFiles])
@@ -53,7 +66,8 @@ const Upload = () => {
     onDrop,
     accept: {
       'video/*': ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm'],
-      'audio/*': ['.mp3', '.wav', '.aac', '.ogg', '.m4a', '.flac', '.opus']
+      'audio/*': ['.mp3', '.wav', '.aac', '.ogg', '.m4a', '.flac', '.opus'],
+      'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
     },
     maxSize: 500 * 1024 * 1024, // 500MB
     multiple: true
@@ -73,11 +87,15 @@ const Upload = () => {
   }
 
   const getFileIcon = (type) => {
-    return type === 'video' ? (
-      <Video className="h-8 w-8 text-blue-500" />
-    ) : (
-      <Music className="h-8 w-8 text-green-500" />
-    )
+    switch (type) {
+      case 'video':
+        return <Video className="h-8 w-8 text-blue-500" />
+      case 'image':
+        return <Image className="h-8 w-8 text-purple-500" />
+      case 'audio':
+      default:
+        return <Music className="h-8 w-8 text-green-500" />
+    }
   }
 
   // FUNÇÃO DE UPLOAD REAL PARA SUA API SPRING BOOT
@@ -281,7 +299,7 @@ const Upload = () => {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Upload de Arquivos</h1>
         <p className="text-muted-foreground mt-1">
-          Envie seus arquivos de áudio e vídeo para armazenamento seguro
+          Envie seus arquivos de áudio, vídeo e imagens para armazenamento seguro
         </p>
       </div>
 
@@ -318,7 +336,7 @@ const Upload = () => {
                 </div>
               )}
               <div className="text-xs text-muted-foreground space-y-1">
-                <p>Formatos suportados: MP4, AVI, MOV, MP3, WAV, AAC, OPUS</p>
+                <p>Formatos suportados: MP4, AVI, MOV, MP3, WAV, AAC, OPUS, JPG, PNG, GIF, WEBP</p>
                 <p>Tamanho máximo: 500MB por arquivo</p>
               </div>
             </div>
@@ -454,19 +472,19 @@ const Upload = () => {
           <div className="flex items-start space-x-3">
             <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
             <p className="text-sm text-muted-foreground">
-              Após o vencimento, os arquivos não poderão mais ser baixados
+              Arquivos são armazenados de forma segura e criptografada
             </p>
           </div>
           <div className="flex items-start space-x-3">
             <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
             <p className="text-sm text-muted-foreground">
-              Os arquivos são automaticamente compactados em formato ZIP para download
+              Suporte para múltiplos formatos: áudio, vídeo e imagens
             </p>
           </div>
           <div className="flex items-start space-x-3">
             <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
             <p className="text-sm text-muted-foreground">
-              Tamanho máximo por arquivo: <strong>500MB</strong>
+              Tamanho máximo por arquivo: 500MB
             </p>
           </div>
         </CardContent>
