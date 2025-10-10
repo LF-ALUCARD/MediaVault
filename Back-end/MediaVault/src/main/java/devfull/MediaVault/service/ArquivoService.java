@@ -8,6 +8,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -15,6 +16,7 @@ import java.util.zip.ZipOutputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +30,10 @@ import devfull.MediaVault.entities.DTO.ArquivoInfoDTO;
 import devfull.MediaVault.repositories.ArquivoRepository;
 import devfull.MediaVault.service.exceptions.AcessoNegadoException;
 import devfull.MediaVault.service.exceptions.ArquivoInvalidoException;
+import devfull.MediaVault.service.exceptions.DataBaseException;
 import devfull.MediaVault.service.exceptions.EmailDuplicadoException;
 import devfull.MediaVault.service.exceptions.RecursoNaoEncontradoException;
+import devfull.MediaVault.service.exceptions.ResourceNotFoundException;
 
 @Service
 public class ArquivoService {
@@ -44,8 +48,8 @@ public class ArquivoService {
 			}
 
 			// Validação de tipo
-			String[] formatosPermitidos = { "mp4", "avi", "mov", "mp3", "wav", "aac", "ogg", "m4a", "flac", "jpg",
-					"jpeg", "png", "gif", "bmp", "webp" };
+			String[] formatosPermitidos = { "mp4", "opus", "avi", "mov", "mp3", "wav", "aac", "ogg", "m4a", "flac",
+					"jpg", "jpeg", "png", "gif", "bmp", "webp" };
 			String extensao = obj.getNome().substring(obj.getNome().lastIndexOf(".") + 1).toLowerCase();
 			boolean tipoValido = Arrays.stream(formatosPermitidos).anyMatch(extensao::equals);
 
@@ -132,17 +136,22 @@ public class ArquivoService {
 		}
 
 		String basePath = "C:\\midia";
+		String tipo = obj.getTipo().toLowerCase();
+		String tipoPasta;
 
 		// Define a pasta com base no tipo
-		String tipoPasta;
-		if (obj.getTipo().equalsIgnoreCase("video")) {
+		switch (tipo) {
+		case "video":
 			tipoPasta = "video";
-		} else if (obj.getTipo().equalsIgnoreCase("audio")) {
+			break;
+		case "audio":
 			tipoPasta = "audio";
-		} else if (obj.getTipo().equalsIgnoreCase("image")) {
+			break;
+		case "image":
 			tipoPasta = "image";
-		} else {
-			throw new IllegalArgumentException("Tipo de arquivo inválido: " + obj.getTipo());
+			break;
+		default:
+			throw new IllegalArgumentException("Tipo de arquivo inválido: " + tipo);
 		}
 
 		Path pastaDestino = Paths.get(basePath, tipoPasta);
@@ -156,6 +165,46 @@ public class ArquivoService {
 		Files.copy(obj.getFile().getInputStream(), caminhoArquivo, StandardCopyOption.REPLACE_EXISTING);
 
 		return caminhoArquivo.toString();
+	}
+
+	public void delete(Long id) {
+		if (!repositor.existsById(id)) {
+			throw new ResourceNotFoundException("Id não encontrado");
+		}
+
+		try {
+			boolean arquivoApagado = apagandoArquivo(id);
+
+			if (!arquivoApagado) {
+				System.out.println("Arquivo físico não encontrado, mas metadados serão removidos.");
+			}
+
+			repositor.deleteById(id);
+		} catch (DataIntegrityViolationException e) {
+			throw new DataBaseException(e.getMessage());
+		} catch (RuntimeException e) {
+			throw new RuntimeException("Erro ao apagar arquivo físico: " + e.getMessage());
+		}
+	}
+
+	private boolean apagandoArquivo(Long id) {
+		Optional<Arquivo> obj = repositor.findById(id);
+		if (obj.isEmpty()) {
+			return false;
+		}
+
+		Path caminhoCompleto = Paths.get(obj.get().getCaminho_ws());
+
+		try {
+			if (Files.exists(caminhoCompleto)) {
+				Files.delete(caminhoCompleto);
+				return true;
+			} else {
+				return false;
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("Erro ao apagar o arquivo: " + e.getMessage());
+		}
 	}
 
 	private Arquivo converter(ArquivoDTO obj, String caminho) {

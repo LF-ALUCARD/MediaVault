@@ -154,7 +154,7 @@ const Files = () => {
   }
 
   const handleDownload = async (file) => {
-    if (file.status === 'expired') {
+    if (file.status === 'Expirando') {
       alert('Este arquivo expirou e não pode mais ser baixado.')
       return
     }
@@ -240,12 +240,26 @@ const Files = () => {
     }
   }
 
-  const handleDelete = (fileId) => {
-    if (confirm('Tem certeza que deseja excluir este arquivo?')) {
-      alert('Arquivo excluído com sucesso!')
+
+const handleDelete = async (fileId) => {
+  if (confirm('Tem certeza que deseja excluir este arquivo?')) {
+    try {
+      await fetch(`http://localhost:8080/api/files/${fileId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      alert('Arquivo excluído com sucesso!');
       setFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
+    } catch (error) {
+      console.error('Erro ao excluir arquivo:', error);
+      alert('Erro ao excluir o arquivo. Tente novamente.');
     }
   }
+};
+
 
   const getStatusCounts = () => {
     const valid = files.filter(f => f.status === 'valid').length

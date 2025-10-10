@@ -1,9 +1,12 @@
 package devfull.MediaVault.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 import devfull.MediaVault.entities.DTO.ArquivoDTO;
 import devfull.MediaVault.entities.DTO.ArquivoInfoDTO;
 import devfull.MediaVault.service.ArquivoService;
-import org.springframework.core.io.Resource;
 
 @RestController
 @RequestMapping("api/files")
@@ -54,4 +56,11 @@ public class ArquivoController {
 	public ResponseEntity<Resource> downloadArquivo(@PathVariable Long id) {
 	    return servico.downloadArquivoZip(id);
 	}
+	
+	@DeleteMapping(value = "/{id}")
+	public ResponseEntity<Map<String, String>> delete(@PathVariable Long id){
+	    servico.delete(id);
+	    return ResponseEntity.ok().body(Map.of("message", "Arquivo excluído com sucesso"));
+	}
+
 }
