@@ -90,46 +90,46 @@ public class ArquivoService {
 	}
 
 	public ResponseEntity<Resource> downloadArquivoZip(Long id) {
-		User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+	    User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-		// Buscar o arquivo e validar dono
-		Arquivo arquivo = repositor.findById(id)
-				.orElseThrow(() -> new RecursoNaoEncontradoException("Arquivo não encontrado"));
+	    // Buscar o arquivo e validar dono
+	    Arquivo arquivo = repositor.findById(id)
+	        .orElseThrow(() -> new RecursoNaoEncontradoException("Arquivo não encontrado"));
 
-		if (!arquivo.getUser().getId().equals(user.getId())) {
-			throw new AcessoNegadoException("Você não tem permissão para acessar este arquivo");
-		}
+	    if (!arquivo.getUser().getId().equals(user.getId())) {
+	        throw new AcessoNegadoException("Você não tem permissão para acessar este arquivo");
+	    }
 
-		// Verificar expiração
-		if (arquivo.getData_expiracao().isBefore(LocalDate.now())) {
-			throw new ArquivoInvalidoException("Arquivo expirado. Não é possível fazer download após 180 dias.");
-		}
+	    // Verificar expiração
+	    if (arquivo.getData_expiracao().isBefore(LocalDate.now())) {
+	        throw new ArquivoInvalidoException("Arquivo expirado. Não é possível fazer download após 180 dias.");
+	    }
 
-		try {
-			// Caminho do arquivo original
-			Path caminhoOriginal = Paths.get(arquivo.getCaminho_ws());
+	    try {
+	        // Caminho do arquivo original
+	        Path caminhoOriginal = Paths.get(arquivo.getCaminho_ws());
 
-			// Criar ZIP temporário
-			Path zipTemp = Files.createTempFile("arquivo_", ".zip");
-			try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(zipTemp))) {
-				ZipEntry zipEntry = new ZipEntry(arquivo.getNome());
-				zipOut.putNextEntry(zipEntry);
-				Files.copy(caminhoOriginal, zipOut);
-				zipOut.closeEntry();
-			}
+	        // Criar ZIP temporário
+	        Path zipTemp = Files.createTempFile("arquivo_", ".zip");
+	        try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(zipTemp))) {
+	            ZipEntry zipEntry = new ZipEntry(arquivo.getNome());
+	            zipOut.putNextEntry(zipEntry);
+	            Files.copy(caminhoOriginal, zipOut);
+	            zipOut.closeEntry();
+	        }
 
-			// Preparar resposta
-			InputStreamResource resource = new InputStreamResource(Files.newInputStream(zipTemp));
-			return ResponseEntity.ok()
-					.header(HttpHeaders.CONTENT_DISPOSITION,
-							"attachment; filename=\"" + arquivo.getNome().replaceAll("\\.[^.]+$", "") + ".zip\"")
-					.contentType(MediaType.APPLICATION_OCTET_STREAM).body(resource);
+	        // Preparar resposta
+	        InputStreamResource resource = new InputStreamResource(Files.newInputStream(zipTemp));
+	        return ResponseEntity.ok()
+	            .header(HttpHeaders.CONTENT_DISPOSITION,
+	                "attachment; filename=\"" + arquivo.getNome().replaceAll("\\.[^.]+$", "") + ".zip\"")
+	            .contentType(MediaType.parseMediaType("application/zip"))
+	            .body(resource);
 
-		} catch (IOException e) {
-			throw new RuntimeException("Erro ao gerar o arquivo ZIP", e);
-		}
+	    } catch (IOException e) {
+	        throw new RuntimeException("Erro ao gerar o arquivo ZIP", e);
+	    }
 	}
-
 	private String salvarArquivoFisico(ArquivoDTO obj) throws IOException {
 		if (obj.getFile() == null) {
 			throw new IllegalArgumentException("Arquivo não pode ser null");

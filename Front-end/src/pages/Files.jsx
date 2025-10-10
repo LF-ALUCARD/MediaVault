@@ -154,7 +154,7 @@ const Files = () => {
   }
 
   const handleDownload = async (file) => {
-    if (file.status === 'Expirando') {
+    if (file.status === 'expired') {
       alert('Este arquivo expirou e não pode mais ser baixado.')
       return
     }
