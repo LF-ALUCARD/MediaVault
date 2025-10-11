@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -12,61 +12,82 @@ import {
   CheckCircle,
   HardDrive,
   TrendingUp,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react'
 
 const Dashboard = () => {
   const { user } = useAuth()
+  const [stats, setStats] = useState(null)
+  const [recentFiles, setRecentFiles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Dados simulados - em produção viriam da API
-  const stats = {
-    totalFiles: 24,
-    validFiles: 18,
-    expiringFiles: 4,
-    expiredFiles: 2,
-    totalStorage: '2.4 GB',
-    usedStorage: '1.8 GB',
-    storagePercentage: 75
-  }
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          throw new Error('Token de autenticação não encontrado.')
+        }
 
-  const recentFiles = [
-    {
-      id: 1,
-      name: 'apresentacao_projeto.mp4',
-      type: 'video',
-      size: '45.2 MB',
-      uploadDate: '2024-10-01',
-      expiryDate: '2025-03-30',
-      status: 'valid'
-    },
-    {
-      id: 2,
-      name: 'reuniao_equipe.mp3',
-      type: 'audio',
-      size: '12.8 MB',
-      uploadDate: '2024-09-28',
-      expiryDate: '2025-03-27',
-      status: 'valid'
-    },
-    {
-      id: 3,
-      name: 'entrevista_cliente.wav',
-      type: 'audio',
-      size: '89.1 MB',
-      uploadDate: '2024-09-15',
-      expiryDate: '2025-03-14',
-      status: 'expiring'
-    },
-    {
-      id: 4,
-      name: 'demo_produto.mp4',
-      type: 'video',
-      size: '156.7 MB',
-      uploadDate: '2024-04-10',
-      expiryDate: '2024-10-07',
-      status: 'expired'
+        const response = await fetch('http://localhost:8080/api/dashboard/stats', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Falha ao buscar dados do dashboard.')
+        }
+
+        const data = await response.json()
+        
+        console.log('Dados recebidos da API:', data) // Para debug
+        
+        // CORREÇÃO: Como a API já envia os valores em GB, vamos formatá-los adequadamente
+        const formatStorageFromGB = (gbValue) => {
+          if (!gbValue || gbValue === 0) return '0 GB'
+          
+          // Se o valor for menor que 1 GB, converter para MB
+          if (gbValue < 1) {
+            const mbValue = gbValue * 1024
+            return `${mbValue.toFixed(2)} MB`
+          }
+          
+          // Se for maior ou igual a 1 GB, manter em GB
+          return `${gbValue.toFixed(2)} GB`
+        }
+
+        // Criando o objeto stats com os dados formatados corretamente
+        const formattedStats = {
+          totalFiles: data.totalFiles || 0,
+          validFiles: data.validFiles || 0,
+          expiringFiles: data.expiringFiles || 0,
+          expiredFiles: data.expiredFiles || 0,
+          totalStorage: formatStorageFromGB(data.totalStorage),
+          usedStorage: formatStorageFromGB(data.usedStorage),
+          storagePercentage: data.storagePercentage || 0
+        }
+
+        setStats(formattedStats)
+        setRecentFiles(data.recentFiles || [])
+        
+      } catch (err) {
+        console.error('Erro ao buscar dados do dashboard:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    fetchDashboardData()
+  }, [])
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -95,7 +116,51 @@ const Dashboard = () => {
   }
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString('pt-BR')
+  }
+
+  // Função para obter ícone do tipo de arquivo
+  const getFileTypeIcon = (type) => {
+    switch (type) {
+      case 'video':
+        return '🎥'
+      case 'audio':
+        return '🎵'
+      case 'image':
+        return '🖼️'
+      default:
+        return '📄'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2 text-lg">Carregando dados do dashboard...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-red-500">
+        <AlertTriangle className="h-12 w-12 mb-4" />
+        <p className="text-lg font-semibold">Erro ao carregar o dashboard:</p>
+        <p className="text-md text-center">{error}</p>
+        <p className="text-sm mt-2">Por favor, tente novamente mais tarde ou verifique sua conexão.</p>
+      </div>
+    )
+  }
+
+  // Renderiza o dashboard somente se os dados estiverem disponíveis
+  if (!stats) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+        <p className="text-lg">Nenhum dado disponível para o dashboard.</p>
+      </div>
+    )
   }
 
   return (
@@ -130,7 +195,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalFiles}</div>
             <p className="text-xs text-muted-foreground">
-              +2 desde o último mês
+              Todos os seus arquivos
             </p>
           </CardContent>
         </Card>
@@ -180,10 +245,10 @@ const Dashboard = () => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <HardDrive className="h-5 w-5 mr-2" />
-            Uso de Armazenamento
+            Uso de Armazenamento do Disco
           </CardTitle>
           <CardDescription>
-            Acompanhe o uso do seu espaço de armazenamento
+            Espaço total do disco onde os arquivos são armazenados
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -194,7 +259,7 @@ const Dashboard = () => {
             </div>
             <Progress value={stats.storagePercentage} className="h-2" />
             <p className="text-xs text-muted-foreground">
-              {stats.storagePercentage}% do espaço utilizado
+              {stats.storagePercentage}% do disco utilizado
             </p>
           </div>
         </CardContent>
@@ -220,42 +285,54 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {recentFiles.map((file) => (
-              <div
-                key={file.id}
-                className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    {getStatusIcon(file.status)}
+            {recentFiles.length > 0 ? (
+              recentFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0 text-2xl">
+                      {getFileTypeIcon(file.type)}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {getStatusIcon(file.status)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {file.name}
+                      </p>
+                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                        <span className="capitalize">{file.type}</span>
+                        <span>•</span>
+                        <span>{file.size}</span>
+                        <span>•</span>
+                        <span>Upload: {formatDate(file.uploadDate)}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {file.name}
-                    </p>
-                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                      <span className="capitalize">{file.type}</span>
-                      <span>•</span>
-                      <span>{file.size}</span>
-                      <span>•</span>
-                      <span>Upload: {formatDate(file.uploadDate)}</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="text-right">
+                      <p className={`text-xs font-medium ${getStatusColor(file.status)}`}>
+                        {file.status === 'valid' && 'Válido'}
+                        {file.status === 'expiring' && 'Expirando'}
+                        {file.status === 'expired' && 'Expirado'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Expira: {formatDate(file.expiryDate)}
+                      </p>
+                      {file.daysRemaining !== undefined && (
+                        <p className="text-xs text-muted-foreground">
+                          {file.daysRemaining > 0 ? `${file.daysRemaining} dias restantes` : 'Expirado'}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="text-right">
-                    <p className={`text-xs font-medium ${getStatusColor(file.status)}`}>
-                      {file.status === 'valid' && 'Válido'}
-                      {file.status === 'expiring' && 'Expirando'}
-                      {file.status === 'expired' && 'Expirado'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Expira: {formatDate(file.expiryDate)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-center text-muted-foreground">Nenhum arquivo recente encontrado.</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -270,7 +347,7 @@ const Dashboard = () => {
                 Fazer Upload
               </CardTitle>
               <CardDescription>
-                Envie novos arquivos de áudio ou vídeo
+                Envie novos arquivos de áudio, vídeo ou imagem
               </CardDescription>
             </CardHeader>
           </Link>
