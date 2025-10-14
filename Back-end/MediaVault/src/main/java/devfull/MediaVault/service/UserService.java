@@ -77,4 +77,6 @@ public class UserService {
         entidade.setSenha(passwordEncoder.encode(obj.getPassword()));
         return entidade;
     }
+    
+    public Arquivo updateProfile()
 }
