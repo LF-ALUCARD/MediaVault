@@ -8,6 +8,7 @@ import devfull.MediaVault.entities.User;
 import devfull.MediaVault.entities.DTO.AuthResponseDTO;
 import devfull.MediaVault.entities.DTO.UserInfoDTO;
 import devfull.MediaVault.entities.DTO.UserLoginDTO;
+import devfull.MediaVault.entities.DTO.UserPasswordDTO;
 import devfull.MediaVault.entities.DTO.UserProfileDTO;
 import devfull.MediaVault.entities.DTO.UserRegisterDTO;
 import devfull.MediaVault.entities.enums.UserRole;
@@ -80,15 +81,31 @@ public class UserService {
 	}
 
 	public User updateProfile(Long id, UserProfileDTO obj) {
-		
+
 		if (repositor.existsByEmail(obj.getEmail()) && repositor.existsByNome(obj.getNome())) {
-			throw new CredenciaisInvalidasException("Senha ou e-mail já existentes");
+			throw new CredenciaisInvalidasException("Nome ou e-mail já existentes");
 		}
-		
+
 		User entidade = repositor.getReferenceById(id);
 		updateProfile(entidade, obj);
 		return repositor.save(entidade);
 
+	}
+
+	public User updatePassword(Long id, UserPasswordDTO obj) {
+
+		User entidade = repositor.getReferenceById(id);
+
+		if (passwordEncoder.matches(obj.getSenhaNova(), entidade.getSenha())) {
+			throw new CredenciaisInvalidasException("Senha anterior não pode ser usada");
+		}
+
+		if (!passwordEncoder.matches(obj.getSenhaAtual(), entidade.getSenha())) {
+			throw new CredenciaisInvalidasException("Senha incorreta");
+		}
+
+		entidade.setSenha(passwordEncoder.encode(obj.getSenhaNova()));
+		return repositor.save(entidade);
 	}
 
 	private void updateProfile(User entidade, UserProfileDTO obj) {

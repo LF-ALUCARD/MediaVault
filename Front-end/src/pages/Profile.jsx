@@ -88,26 +88,32 @@ const onProfileSubmit = async (data) => {
   }
 };
 
-  const onPasswordSubmit = async (data) => {
-    setPasswordLoading(true)
-    setPasswordError('')
-    setPasswordSuccess('')
 
-    try {
-      // Simular alteração de senha
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setPasswordSuccess('Senha alterada com sucesso!')
-      passwordForm.reset()
-      
-      // Limpar mensagem após 3 segundos
-      setTimeout(() => setPasswordSuccess(''), 3000)
-    } catch (error) {
-      setPasswordError('Erro ao alterar senha. Verifique sua senha atual.')
-    } finally {
-      setPasswordLoading(false)
-    }
+const onPasswordSubmit = async (data) => {
+  setPasswordLoading(true)
+  setPasswordError('')
+  setPasswordSuccess('')
+  try {
+    await axios.put(`http://localhost:8080/api/user/password/${user.id}`, {
+      senhaAtual: data.currentPassword,
+      senhaNova: data.newPassword
+    }, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    setPasswordSuccess('Senha alterada com sucesso!')
+    passwordForm.reset()
+    setTimeout(() => setPasswordSuccess(''), 3000)
+  } catch (error) {
+    setPasswordError(error.response?.data?.message || 'Erro ao alterar senha.')
+  } finally {
+    setPasswordLoading(false)
   }
+}
+
 
   // Dados simulados de estatísticas do usuário
   const userStats = {
