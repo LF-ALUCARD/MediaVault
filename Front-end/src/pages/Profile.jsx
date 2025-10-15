@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import axios from 'axios'
 import { Separator } from '@/components/ui/separator'
 import {
   User,
@@ -36,7 +37,7 @@ const passwordSchema = z.object({
 })
 
 const Profile = () => {
-  const { user } = useAuth()
+  const { user, setUser } = useAuth();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -59,25 +60,33 @@ const Profile = () => {
     resolver: zodResolver(passwordSchema),
   })
 
-  const onProfileSubmit = async (data) => {
-    setProfileLoading(true)
-    setProfileError('')
-    setProfileSuccess('')
+const onProfileSubmit = async (data) => {
+  console.log('User ID:', user?.id); // Verifica se o ID está correto
+  setProfileLoading(true);
+  setProfileError('');
+  setProfileSuccess('');
 
-    try {
-      // Simular atualização do perfil
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setProfileSuccess('Perfil atualizado com sucesso!')
-      
-      // Limpar mensagem após 3 segundos
-      setTimeout(() => setProfileSuccess(''), 3000)
-    } catch (error) {
-      setProfileError('Erro ao atualizar perfil. Tente novamente.')
-    } finally {
-      setProfileLoading(false)
-    }
+  try {
+    const response = await axios.put(`http://localhost:8080/api/user/profile/${user.id}`, data, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Atualiza estado global ou local com os dados retornados
+    // setUser(response.data); // Comentado: AuthContext não fornece setUser. Atualização do formulário já reflete os dados.
+    profileForm.reset(response.data); // Atualiza campos do formulário
+
+    setProfileSuccess('Perfil atualizado com sucesso!');
+    setTimeout(() => setProfileSuccess(''), 3000);
+  } catch (error) {
+    console.error('Erro na requisição:', error);
+    setProfileError('Erro ao atualizar perfil. Tente novamente.');
+  } finally {
+    setProfileLoading(false);
   }
+};
 
   const onPasswordSubmit = async (data) => {
     setPasswordLoading(true)
