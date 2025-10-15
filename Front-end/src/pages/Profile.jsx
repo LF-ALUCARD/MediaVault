@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -47,6 +47,55 @@ const Profile = () => {
   const [passwordError, setPasswordError] = useState('')
   const [profileLoading, setProfileLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
+
+  // Adicionado para as estatísticas da conta
+  const [userStats, setUserStats] = useState({ totalFiles: 0, totalStorage: '0 GB', memberSince: '', lastLogin: '' })
+  const [loadingStats, setLoadingStats] = useState(false)
+
+  // Função para formatar bytes em GB/MB
+  const formatStorage = (bytes) => {
+    if (!bytes || bytes === 0) return '0 GB'
+    const gb = bytes / (1024 * 1024 * 1024)
+    return gb < 1 ? `${(gb * 1024).toFixed(2)} MB` : `${gb.toFixed(2)} GB`
+  }
+
+  // Buscar dados reais da conta
+  useEffect(() => {
+    const fetchAccountInfo = async () => {
+      setLoadingStats(true)
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token não encontrado')
+
+        const response = await fetch(`http://localhost:8080/api/user/account-info/${user.id}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Erro ao buscar informações da conta')
+        }
+
+        const data = await response.json()
+        setUserStats({
+          totalFiles: data.totalFiles || 0,
+          totalStorage: formatStorage(data.totalStorage),
+          memberSince: '2024-01-15',
+          lastLogin: '2024-10-04'
+        })
+      } catch (err) {
+        console.error('Erro ao buscar dados da conta:', err)
+      } finally {
+        setLoadingStats(false)
+      }
+    }
+
+    if (user?.id) fetchAccountInfo()
+  }, [user?.id])
 
   const profileForm = useForm({
     resolver: zodResolver(profileSchema),
@@ -114,16 +163,8 @@ const onPasswordSubmit = async (data) => {
   }
 }
 
-
-  // Dados simulados de estatísticas do usuário
-  const userStats = {
-    memberSince: '2024-01-15',
-    totalFiles: 24,
-    totalStorage: '2.4 GB',
-    lastLogin: '2024-10-04'
-  }
-
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('pt-BR', {
       year: 'numeric',
       month: 'long',
@@ -156,7 +197,7 @@ const onPasswordSubmit = async (data) => {
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <p className="text-sm text-muted-foreground">Membro desde</p>
-              <p className="font-semibold">{formatDate(userStats.memberSince)}</p>
+              <p className="font-semibold">{loadingStats ? '...' : formatDate(userStats.memberSince)}</p>
             </div>
             
             <div className="text-center">
@@ -164,7 +205,7 @@ const onPasswordSubmit = async (data) => {
                 <HardDrive className="h-5 w-5 text-primary" />
               </div>
               <p className="text-sm text-muted-foreground">Total de arquivos</p>
-              <p className="font-semibold">{userStats.totalFiles}</p>
+              <p className="font-semibold">{loadingStats ? '...' : userStats.totalFiles}</p>
             </div>
             
             <div className="text-center">
@@ -172,7 +213,7 @@ const onPasswordSubmit = async (data) => {
                 <HardDrive className="h-5 w-5 text-primary" />
               </div>
               <p className="text-sm text-muted-foreground">Armazenamento usado</p>
-              <p className="font-semibold">{userStats.totalStorage}</p>
+              <p className="font-semibold">{loadingStats ? '...' : userStats.totalStorage}</p>
             </div>
             
             <div className="text-center">
@@ -180,7 +221,7 @@ const onPasswordSubmit = async (data) => {
                 <CheckCircle className="h-5 w-5 text-green-500" />
               </div>
               <p className="text-sm text-muted-foreground">Último acesso</p>
-              <p className="font-semibold">{formatDate(userStats.lastLogin)}</p>
+              <p className="font-semibold">{loadingStats ? '...' : formatDate(userStats.lastLogin)}</p>
             </div>
           </div>
         </CardContent>
@@ -293,21 +334,14 @@ const onPasswordSubmit = async (data) => {
                     type={showCurrentPassword ? 'text' : 'password'}
                     placeholder="Sua senha atual"
                     {...passwordForm.register('currentPassword')}
-                    className={`pr-10 ${passwordForm.formState.errors.currentPassword ? 'border-destructive' : ''}`}
+                    className={passwordForm.formState.errors.currentPassword ? 'border-destructive' : ''}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  <span
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-muted-foreground"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
-                    {showCurrentPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </span>
                 </div>
                 {passwordForm.formState.errors.currentPassword && (
                   <p className="text-sm text-destructive">
@@ -324,21 +358,14 @@ const onPasswordSubmit = async (data) => {
                     type={showNewPassword ? 'text' : 'password'}
                     placeholder="Sua nova senha"
                     {...passwordForm.register('newPassword')}
-                    className={`pr-10 ${passwordForm.formState.errors.newPassword ? 'border-destructive' : ''}`}
+                    className={passwordForm.formState.errors.newPassword ? 'border-destructive' : ''}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  <span
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-muted-foreground"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                   >
-                    {showNewPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </span>
                 </div>
                 {passwordForm.formState.errors.newPassword && (
                   <p className="text-sm text-destructive">
@@ -355,21 +382,14 @@ const onPasswordSubmit = async (data) => {
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="Confirme sua nova senha"
                     {...passwordForm.register('confirmPassword')}
-                    className={`pr-10 ${passwordForm.formState.errors.confirmPassword ? 'border-destructive' : ''}`}
+                    className={passwordForm.formState.errors.confirmPassword ? 'border-destructive' : ''}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  <span
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-muted-foreground"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </span>
                 </div>
                 {passwordForm.formState.errors.confirmPassword && (
                   <p className="text-sm text-destructive">
@@ -386,36 +406,23 @@ const onPasswordSubmit = async (data) => {
         </Card>
       </div>
 
-      {/* Informações de segurança */}
+      <Separator />
+
+      {/* Outras configurações */}
       <Card>
         <CardHeader>
-          <CardTitle>Dicas de Segurança</CardTitle>
+          <CardTitle className="flex items-center">
+            <Mail className="h-5 w-5 mr-2" />
+            Configurações de Notificação
+          </CardTitle>
+          <CardDescription>
+            Gerencie suas preferências de e-mail e notificações
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-start space-x-3">
-            <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-            <p className="text-sm text-muted-foreground">
-              Use uma senha forte com pelo menos 8 caracteres, incluindo letras, números e símbolos
-            </p>
-          </div>
-          <div className="flex items-start space-x-3">
-            <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-            <p className="text-sm text-muted-foreground">
-              Não compartilhe suas credenciais de acesso com outras pessoas
-            </p>
-          </div>
-          <div className="flex items-start space-x-3">
-            <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-            <p className="text-sm text-muted-foreground">
-              Faça logout sempre que usar um computador compartilhado
-            </p>
-          </div>
-          <div className="flex items-start space-x-3">
-            <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-            <p className="text-sm text-muted-foreground">
-              Mantenha seus dados de contato atualizados para recuperação de conta
-            </p>
-          </div>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Em breve: Opções para gerenciar suas notificações.
+          </p>
         </CardContent>
       </Card>
     </div>

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import devfull.MediaVault.entities.DTO.ArquivoDTO;
 import devfull.MediaVault.entities.DTO.ArquivoInfoDTO;
+import devfull.MediaVault.entities.DTO.DownloadRequestDTO;
 import devfull.MediaVault.service.ArquivoService;
 
 @RestController
@@ -45,22 +47,27 @@ public class ArquivoController {
 
 		return ResponseEntity.ok(resposta);
 	}
-	
+
 	@GetMapping()
-	public ResponseEntity<List<ArquivoInfoDTO>> files(){ 
+	public ResponseEntity<List<ArquivoInfoDTO>> files() {
 		List<ArquivoInfoDTO> lista = servico.findAll();
 		return ResponseEntity.ok().body(lista);
 	}
-	
+
+	@PostMapping("/download-multiple")
+	public ResponseEntity<Resource> downloadArquivos(@RequestBody DownloadRequestDTO dto) {
+	    return servico.downloadArquivosZip(dto.getFileIds());
+	}
+
 	@GetMapping("/{id}/download")
 	public ResponseEntity<Resource> downloadArquivo(@PathVariable Long id) {
-	    return servico.downloadArquivoZip(id);
+		return servico.downloadArquivosZip(List.of(id));
 	}
-	
+
 	@DeleteMapping(value = "/{id}")
-	public ResponseEntity<Map<String, String>> delete(@PathVariable Long id){
-	    servico.delete(id);
-	    return ResponseEntity.ok().body(Map.of("message", "Arquivo excluído com sucesso"));
+	public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
+		servico.delete(id);
+		return ResponseEntity.ok().body(Map.of("message", "Arquivo excluído com sucesso"));
 	}
 
 }

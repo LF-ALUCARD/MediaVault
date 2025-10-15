@@ -40,6 +40,7 @@ const Files = () => {
   const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [selectedFiles, setSelectedFiles] = useState([]) // Novo estado para arquivos selecionados
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -170,7 +171,6 @@ const Files = () => {
         return;
       }
 
-      // Fazer a requisição para o endpoint de download
       const response = await fetch(`http://localhost:8080/api/files/${file.id}/download`, {
         method: 'GET',
         headers: {
@@ -182,35 +182,18 @@ const Files = () => {
         throw new Error(`Erro no download: ${response.status} ${response.statusText}`);
       }
 
-      // Debug: verificar headers da resposta
-      console.log('Headers da resposta:');
-      response.headers.forEach((value, key) => {
-        console.log(`${key}: ${value}`);
-      });
-
-      // Obter o blob do arquivo
       const blob = await response.blob();
-      console.log('Tipo do blob:', blob.type);
-      console.log('Tamanho do blob:', blob.size);
-      
-      // Verificar se é um arquivo ZIP baseado no Content-Type ou nome do arquivo
       const contentType = response.headers.get('content-type');
       const contentDisposition = response.headers.get('content-disposition');
       
-      console.log('Content-Type:', contentType);
-      console.log('Content-Disposition:', contentDisposition);
-      
-      // Determinar o nome do arquivo para download
       let downloadName = file.name;
       
-      // Se o Content-Type indica ZIP, ajustar a extensão
       if (contentType && contentType.includes('application/zip')) {
         if (!downloadName.endsWith('.zip')) {
           downloadName = downloadName.replace(/\.[^/.]+$/, '') + '.zip';
         }
       }
       
-      // Se há Content-Disposition, extrair o nome do arquivo
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
         if (filenameMatch && filenameMatch[1]) {
@@ -218,19 +201,13 @@ const Files = () => {
         }
       }
       
-      console.log('Nome do arquivo para download:', downloadName);
-      
-      // Criar URL temporária para o blob
       const url = window.URL.createObjectURL(blob);
-      
-      // Criar elemento de link temporário para iniciar o download
       const link = document.createElement('a');
       link.href = url;
       link.download = downloadName;
       document.body.appendChild(link);
       link.click();
       
-      // Limpar recursos
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
@@ -240,26 +217,88 @@ const Files = () => {
     }
   }
 
+  // Nova função para download de múltiplos arquivos
+  const handleMultipleDownload = async () => {
+    if (selectedFiles.length === 0) {
+      alert('Nenhum arquivo selecionado para download.');
+      return;
+    }
 
-const handleDelete = async (fileId) => {
-  if (confirm('Tem certeza que deseja excluir este arquivo?')) {
+    if (!localStorage.getItem('token')) {
+      alert('Token de autenticação não encontrado. Por favor, faça login.');
+      return;
+    }
+
     try {
-      await fetch(`http://localhost:8080/api/files/${fileId}`, {
-        method: 'DELETE',
+      // Assumindo que o backend tem um endpoint para download de múltiplos arquivos
+      // que aceita uma lista de IDs e retorna um ZIP ou similar.
+      const response = await fetch('http://localhost:8080/api/files/download-multiple', {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ fileIds: selectedFiles }),
       });
 
-      alert('Arquivo excluído com sucesso!');
-      setFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
-    } catch (error) {
-      console.error('Erro ao excluir arquivo:', error);
-      alert('Erro ao excluir o arquivo. Tente novamente.');
-    }
-  }
-};
+      if (!response.ok) {
+        throw new Error(`Erro no download de múltiplos arquivos: ${response.status} ${response.statusText}`);
+      }
 
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('content-disposition');
+      let downloadName = 'arquivos_selecionados.zip'; // Nome padrão
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          downloadName = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = downloadName;
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setSelectedFiles([]); // Limpa a seleção após o download
+
+    } catch (error) {
+      console.error('Erro ao fazer download de múltiplos arquivos:', error);
+      alert(`Erro ao fazer download de múltiplos arquivos: ${error.message}`);
+    }
+  };
+
+  const handleCheckboxChange = (fileId) => {
+    setSelectedFiles((prevSelectedFiles) =>
+      prevSelectedFiles.includes(fileId)
+        ? prevSelectedFiles.filter((id) => id !== fileId)
+        : [...prevSelectedFiles, fileId]
+    );
+  };
+
+  const handleDelete = async (fileId) => {
+    if (confirm('Tem certeza que deseja excluir este arquivo?')) {
+      try {
+        await fetch(`http://localhost:8080/api/files/${fileId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+
+        alert('Arquivo excluído com sucesso!');
+        setFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
+      } catch (error) {
+        console.error('Erro ao excluir arquivo:', error);
+        alert('Erro ao excluir o arquivo. Tente novamente.');
+      }
+    }
+  };
 
   const getStatusCounts = () => {
     const valid = files.filter(f => f.status === 'valid').length
@@ -341,158 +380,107 @@ const handleDelete = async (fileId) => {
         </Card>
       </div>
 
-      {/* Filtros e busca */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
-            Filtros e Busca
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar arquivos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="video">Vídeo</SelectItem>
-                <SelectItem value="audio">Áudio</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="valid">Válidos</SelectItem>
-                <SelectItem value="expiring">Expirando</SelectItem>
-                <SelectItem value="expired">Expirados</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <SelectValue placeholder="Ordenar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Data</SelectItem>
-                <SelectItem value="name">Nome</SelectItem>
-                <SelectItem value="size">Tamanho</SelectItem>
-                <SelectItem value="expiry">Expiração</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filtros e Pesquisa */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-grow">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar arquivos..."
+            className="pl-9 pr-4 py-2 w-full"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
 
-      {/* Lista de arquivos */}
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-[180px]">
+            <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Tipos</SelectItem>
+            <SelectItem value="video">Vídeos</SelectItem>
+            <SelectItem value="audio">Áudios</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[180px]">
+            <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Status</SelectItem>
+            <SelectItem value="valid">Válidos</SelectItem>
+            <SelectItem value="expiring">Expirando</SelectItem>
+            <SelectItem value="expired">Expirados</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-[180px]">
+            <MoreVertical className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectValue placeholder="Ordenar por" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date">Data de Upload</SelectItem>
+            <SelectItem value="name">Nome</SelectItem>
+            <SelectItem value="size">Tamanho</SelectItem>
+            <SelectItem value="expiry">Data de Expiração</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Botão de Download Múltiplo */}
+      {selectedFiles.length > 0 && (
+        <Button onClick={handleMultipleDownload} className="w-full md:w-auto">
+          <Download className="h-4 w-4 mr-2" />
+          Download Selecionados ({selectedFiles.length})
+        </Button>
+      )}
+
+      {/* Lista de Arquivos */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            Arquivos ({sortedFiles.length})
-          </CardTitle>
-          <CardDescription>
-            {sortedFiles.length === 0 ? 'Nenhum arquivo encontrado' : 'Clique em um arquivo para mais opções'}
-          </CardDescription>
+          <CardTitle>Arquivos Recentes</CardTitle>
+          <CardDescription>Seus arquivos de áudio e vídeo mais recentes.</CardDescription>
         </CardHeader>
         <CardContent>
           {sortedFiles.length === 0 ? (
-            <div className="text-center py-8">
-              <FileX className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                {files.length === 0 ? 'Você ainda não tem arquivos' : 'Nenhum arquivo corresponde aos filtros'}
-              </p>
-            </div>
+            <p className="text-center text-muted-foreground">Nenhum arquivo encontrado.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {sortedFiles.map((file) => (
-                <div
-                  key={file.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center space-x-4 flex-1">
-                    <div className="flex-shrink-0">
-                      {getFileIcon(file.type)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {file.name}
-                        </p>
-                        {getStatusBadge(file.status, file.daysRemaining)}
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                        <span className="capitalize">{file.type}</span>
-                        <span>{file.size}</span>
-                        <span className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {formatDate(file.uploadDate)}
-                        </span>
-                        <span className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Expira: {formatDate(file.expiryDate)}
-                        </span>
-                      </div>
-                      
-                      {file.status === 'expiring' && (
-                        <Alert className="mt-2 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
-                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                          <AlertDescription className="text-yellow-700 dark:text-yellow-400">
-                            Este arquivo expira em {file.daysRemaining} dias
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      {file.status === 'expired' && (
-                        <Alert variant="destructive" className="mt-2">
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertDescription>
-                            Este arquivo expirou há {Math.abs(file.daysRemaining)} dias e não pode mais ser baixado
-                          </AlertDescription>
-                        </Alert>
-                      )}
+                <div key={file.id} className="flex items-center justify-between p-4 border rounded-md">
+                  <div className="flex items-center space-x-3">
+                    {/* Checkbox para seleção */}
+                    <input
+                      type="checkbox"
+                      checked={selectedFiles.includes(file.id)}
+                      onChange={() => handleCheckboxChange(file.id)}
+                      className="form-checkbox h-5 w-5 text-blue-600 rounded"
+                    />
+                    {getFileIcon(file.type)}
+                    <div>
+                      <p className="font-medium">{file.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {file.size} MB | Upload em {formatDate(file.uploadDate)} | Expira em {formatDate(file.expiryDate)}
+                      </p>
                     </div>
                   </div>
-                  
                   <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(file)}
-                      disabled={file.status === 'expired'}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                    
+                    {getStatusBadge(file.status, file.daysRemaining)}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Abrir menu</span>
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() => handleDownload(file)}
-                          disabled={file.status === 'expired'}
+                          className="text-blue-600"
                         >
                           <Download className="h-4 w-4 mr-2" />
                           Download

@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -89,47 +90,63 @@ public class ArquivoService {
 		return listagem;
 	}
 
-	public ResponseEntity<Resource> downloadArquivoZip(Long id) {
+	public ResponseEntity<Resource> downloadArquivosZip(List<Long> ids) {
 	    User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-	    // Buscar o arquivo e validar dono
-	    Arquivo arquivo = repositor.findById(id)
-	        .orElseThrow(() -> new RecursoNaoEncontradoException("Arquivo não encontrado"));
+	    List<Arquivo> arquivosValidos = new ArrayList<>();
 
-	    if (!arquivo.getUser().getId().equals(user.getId())) {
-	        throw new AcessoNegadoException("Você não tem permissão para acessar este arquivo");
+	    for (Long id : ids) {
+	        Arquivo arquivo = repositor.findById(id)
+	            .orElseThrow(() -> new RecursoNaoEncontradoException("Arquivo não encontrado: ID " + id));
+
+	        if (!arquivo.getUser().getId().equals(user.getId())) {
+	            throw new AcessoNegadoException("Você não tem permissão para acessar o arquivo ID " + id);
+	        }
+
+	        if (arquivo.getData_expiracao().isBefore(LocalDate.now())) {
+	            continue; // Ignora expirados
+	        }
+
+	        arquivosValidos.add(arquivo);
 	    }
 
-	    // Verificar expiração
-	    if (arquivo.getData_expiracao().isBefore(LocalDate.now())) {
-	        throw new ArquivoInvalidoException("Arquivo expirado. Não é possível fazer download após 180 dias.");
+	    if (arquivosValidos.isEmpty()) {
+	        throw new ArquivoInvalidoException("Nenhum arquivo válido para download.");
 	    }
 
 	    try {
-	        // Caminho do arquivo original
-	        Path caminhoOriginal = Paths.get(arquivo.getCaminho_ws());
-
-	        // Criar ZIP temporário
-	        Path zipTemp = Files.createTempFile("arquivo_", ".zip");
+	        Path zipTemp = Files.createTempFile("arquivos_", ".zip");
 	        try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(zipTemp))) {
-	            ZipEntry zipEntry = new ZipEntry(arquivo.getNome());
-	            zipOut.putNextEntry(zipEntry);
-	            Files.copy(caminhoOriginal, zipOut);
-	            zipOut.closeEntry();
+	            for (Arquivo arquivo : arquivosValidos) {
+	                Path caminhoOriginal = Paths.get(arquivo.getCaminho_ws());
+	                if (!Files.exists(caminhoOriginal)) {
+	                    throw new RuntimeException("Arquivo físico não encontrado: " + caminhoOriginal);
+	                }
+
+	                String nomeArquivo = arquivo.getNome();
+	                System.out.println("Adicionando ao ZIP: " + nomeArquivo + " | Caminho: " + caminhoOriginal);
+
+	                try {
+	                    zipOut.putNextEntry(new ZipEntry(nomeArquivo));
+	                    Files.copy(caminhoOriginal, zipOut);
+	                    zipOut.closeEntry();
+	                } catch (IOException e) {
+	                    throw new RuntimeException("Erro ao adicionar arquivo ao ZIP: " + nomeArquivo, e);
+	                }
+	            }
 	        }
 
-	        // Preparar resposta
 	        InputStreamResource resource = new InputStreamResource(Files.newInputStream(zipTemp));
 	        return ResponseEntity.ok()
-	            .header(HttpHeaders.CONTENT_DISPOSITION,
-	                "attachment; filename=\"" + arquivo.getNome().replaceAll("\\.[^.]+$", "") + ".zip\"")
-	            .contentType(MediaType.parseMediaType("application/zip"))
+	            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"arquivos_selecionados.zip\"")
+	            .contentType(MediaType.APPLICATION_OCTET_STREAM)
 	            .body(resource);
 
 	    } catch (IOException e) {
-	        throw new RuntimeException("Erro ao gerar o arquivo ZIP", e);
+	        throw new RuntimeException("Erro ao gerar o arquivo ZIP: " + e.getMessage(), e);
 	    }
 	}
+	
 	private String salvarArquivoFisico(ArquivoDTO obj) throws IOException {
 		if (obj.getFile() == null) {
 			throw new IllegalArgumentException("Arquivo não pode ser null");

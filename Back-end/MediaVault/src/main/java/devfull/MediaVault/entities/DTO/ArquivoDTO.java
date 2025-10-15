@@ -1,6 +1,7 @@
 package devfull.MediaVault.entities.DTO;
 
 import java.io.Serializable;
+import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -11,72 +12,82 @@ import jakarta.validation.constraints.NotNull;
 
 public class ArquivoDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    @NotNull(message = "Arquivo é obrigatório")
-    private MultipartFile file;
-    
-    @NotBlank(message = "Nome é obrigatório")
-    private String nome;
-    
-    @NotBlank(message = "Tipo é obrigatório")
-    private String tipo;
-    
-    @NotNull(message = "Tamanho é obrigatório")
-    private Long tamanho;
-    
-    // Usando JsonProperty para mapear corretamente
-    @JsonProperty("tamanhoFormatado")
-    private String tamanhoFormatado;
+	private static final long serialVersionUID = 1L;
+	@NotNull(message = "Arquivo é obrigatório")
+	private MultipartFile file;
 
-    public ArquivoDTO() {
-    }
+	@NotBlank(message = "Nome é obrigatório")
+	private String nome;
 
-    public ArquivoDTO(MultipartFile file, String nome, String tipo, Long tamanho, String tamanhoFormatado) {
-        this.file = file;
-        this.nome = nome;
-        this.tipo = tipo;
-        this.tamanho = tamanho;
-        this.tamanhoFormatado = tamanhoFormatado;
-    }
+	@NotBlank(message = "Tipo é obrigatório")
+	private String tipo;
 
-    // Getters e Setters
-    public MultipartFile getFile() {
-        return file;
-    }
+	@NotNull(message = "Tamanho é obrigatório")
+	private Long tamanho;
 
-    public void setFile(MultipartFile file) {
-        this.file = file;
-    }
+	// Usando JsonProperty para mapear corretamente
+	@JsonProperty("tamanhoFormatado")
+	private String tamanhoFormatado;
 
-    public String getNome() {
-        return nome;
-    }
+	private List<Long> fileIds;
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+	public List<Long> getFileIds() {
+		return fileIds;
+	}
 
-    public String getTipo() {
-        return tipo;
-    }
+	public void setFileIds(List<Long> fileIds) {
+		this.fileIds = fileIds;
+	}
 
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
+	public ArquivoDTO() {
+	}
 
-    public Long getTamanho() {
-        return tamanho;
-    }
+	public ArquivoDTO(MultipartFile file, String nome, String tipo, Long tamanho, String tamanhoFormatado) {
+		this.file = file;
+		this.nome = nome;
+		this.tipo = tipo;
+		this.tamanho = tamanho;
+		this.tamanhoFormatado = tamanhoFormatado;
+	}
 
-    public void setTamanho(Long tamanho) {
-        this.tamanho = tamanho;
-    }
+	// Getters e Setters
+	public MultipartFile getFile() {
+		return file;
+	}
 
-    public String getTamanhoFormatado() {
-        return tamanhoFormatado;
-    }
+	public void setFile(MultipartFile file) {
+		this.file = file;
+	}
 
-    public void setTamanhoFormatado(String tamanhoFormatado) {
-        this.tamanhoFormatado = tamanhoFormatado;
-    }
+	public String getNome() {
+		return nome;
+	}
+
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
+
+	public String getTipo() {
+		return tipo;
+	}
+
+	public void setTipo(String tipo) {
+		this.tipo = tipo;
+	}
+
+	public Long getTamanho() {
+		return tamanho;
+	}
+
+	public void setTamanho(Long tamanho) {
+		this.tamanho = tamanho;
+	}
+
+	public String getTamanhoFormatado() {
+		return tamanhoFormatado;
+	}
+
+	public void setTamanhoFormatado(String tamanhoFormatado) {
+		this.tamanhoFormatado = tamanhoFormatado;
+	}
 }

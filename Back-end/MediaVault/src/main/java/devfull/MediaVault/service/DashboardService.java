@@ -10,71 +10,71 @@ import org.springframework.stereotype.Service;
 import devfull.MediaVault.entities.Arquivo;
 import devfull.MediaVault.entities.DTO.ArquivoInfoDTO;
 import devfull.MediaVault.entities.DTO.DashboardStatsDTO;
+import devfull.MediaVault.entities.DTO.UserStatsDTO;
 import devfull.MediaVault.repositories.ArquivoRepository;
 
 @Service
 public class DashboardService {
 
-    @Autowired
-    private ArquivoRepository repositor;
+	@Autowired
+	private ArquivoRepository repositor;
 
-    public DashboardStatsDTO buscarDados() {
-        List<Arquivo> arquivos = repositor.findAll();
+	public DashboardStatsDTO buscarDados() {
+		List<Arquivo> arquivos = repositor.findAll();
 
-        DashboardStatsDTO dash = new DashboardStatsDTO();
-        dash.setTotalFiles(arquivos.size());
-        dash.setValidFiles(contarPorStatus(arquivos, "valid"));
-        dash.setExpiringFiles(contarPorStatus(arquivos, "expiring"));
-        dash.setExpiredFiles(contarPorStatus(arquivos, "expired"));
-        dash.setTotalStorage(espacoTotalDisco());
-        dash.setUsedStorage(espacoUsadoDisco());
-        dash.setStoragePercentage(percentualUsoDisco());
-        dash.setRecentFiles(arquivosRecentes(arquivos));
+		DashboardStatsDTO dash = new DashboardStatsDTO();
+		dash.setTotalFiles(arquivos.size());
+		dash.setValidFiles(contarPorStatus(arquivos, "valid"));
+		dash.setExpiringFiles(contarPorStatus(arquivos, "expiring"));
+		dash.setExpiredFiles(contarPorStatus(arquivos, "expired"));
+		dash.setTotalStorage(espacoTotalDisco());
+		dash.setUsedStorage(espacoUsadoDisco());
+		dash.setStoragePercentage(percentualUsoDisco());
+		dash.setRecentFiles(arquivosRecentes(arquivos));
 
-        return dash;
-    }
+		return dash;
+	}
 
-    private Integer contarPorStatus(List<Arquivo> arquivos, String status) {
-        return (int) arquivos.stream()
-            .filter(x -> status.equals(x.getStatus()))
-            .count();
-    }
+	public UserStatsDTO DashUser(Long id) {
+		UserStatsDTO user = new UserStatsDTO();
+		user.setTotalFiles(repositor.countByUserId(id));
+		user.setTotalStorage(repositor.sumTamanhoByUserId(id));
+		return user;
+	}
 
-    /**
-     * Detecta o sistema operacional e retorna o disco raiz correto.
-     */
-    private File obterDiscoRaiz() {
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            return new File("C:\\"); // Disco C: no Windows
-        } else {
-            return new File("/"); // Raiz no Linux/macOS
-        }
-    }
+	private Integer contarPorStatus(List<Arquivo> arquivos, String status) {
+		return (int) arquivos.stream().filter(x -> status.equals(x.getStatus())).count();
+	}
 
-    private Long espacoTotalDisco() {
-        File root = obterDiscoRaiz();
-        return root.getTotalSpace() / (1024 * 1024 * 1024); // GB
-    }
+	private File obterDiscoRaiz() {
+		String os = System.getProperty("os.name").toLowerCase();
+		if (os.contains("win")) {
+			return new File("C:\\");
+		} else {
+			return new File("/");
+		}
+	}
 
-    private Long espacoUsadoDisco() {
-        File root = obterDiscoRaiz();
-        long total = root.getTotalSpace();
-        long free = root.getFreeSpace();
-        return (total - free) / (1024 * 1024 * 1024); // GB
-    }
+	private Long espacoTotalDisco() {
+		File root = obterDiscoRaiz();
+		return root.getTotalSpace() / (1024 * 1024 * 1024);
+	}
 
-    private Integer percentualUsoDisco() {
-        long total = espacoTotalDisco();
-        long usada = espacoUsadoDisco();
-        return total == 0 ? 0 : (int) ((usada * 100) / total);
-    }
+	private Long espacoUsadoDisco() {
+		File root = obterDiscoRaiz();
+		long total = root.getTotalSpace();
+		long free = root.getFreeSpace();
+		return (total - free) / (1024 * 1024 * 1024);
+	}
 
-    private List<ArquivoInfoDTO> arquivosRecentes(List<Arquivo> arquivos) {
-        return arquivos.stream()
-            .sorted(Comparator.comparing(Arquivo::getData_upload).reversed())
-            .limit(5)
-            .map(ArquivoInfoDTO::new)
-            .toList();
-    }
+	private Integer percentualUsoDisco() {
+		long total = espacoTotalDisco();
+		long usada = espacoUsadoDisco();
+		return total == 0 ? 0 : (int) ((usada * 100) / total);
+	}
+
+	private List<ArquivoInfoDTO> arquivosRecentes(List<Arquivo> arquivos) {
+		return arquivos.stream().sorted(Comparator.comparing(Arquivo::getData_upload).reversed()).limit(5)
+				.map(ArquivoInfoDTO::new).toList();
+	}
 }
