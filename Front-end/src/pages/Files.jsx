@@ -155,123 +155,128 @@ const Files = () => {
   }
 
   const handleDownload = async (file) => {
-    if (file.status === 'expired') {
-      alert('Este arquivo expirou e não pode mais ser baixado.')
-      return
-    }
-    
-    if (!file.id) {
-      alert("Erro: ID do arquivo não encontrado.");
+  if (!file.id) {
+    alert("Erro: ID do arquivo não encontrado.");
+    return;
+  }
+
+  try {
+    if (!localStorage.getItem("token")) {
+      alert("Token de autenticação não encontrado. Por favor, faça login.");
       return;
     }
-    
-    try {
-      if (!localStorage.getItem("token")) {
-        alert("Token de autenticação não encontrado. Por favor, faça login.");
+
+    const response = await fetch(`http://localhost:8080/api/files/${file.id}/download`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (errorData?.error === 'FORBIDDEN') {
+        alert(errorData.message);
         return;
       }
-
-      const response = await fetch(`http://localhost:8080/api/files/${file.id}/download`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro no download: ${response.status} ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      const contentType = response.headers.get('content-type');
-      const contentDisposition = response.headers.get('content-disposition');
-      
-      let downloadName = file.name;
-      
-      if (contentType && contentType.includes('application/zip')) {
-        if (!downloadName.endsWith('.zip')) {
-          downloadName = downloadName.replace(/\.[^/.]+$/, '') + '.zip';
-        }
-      }
-      
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        if (filenameMatch && filenameMatch[1]) {
-          downloadName = filenameMatch[1].replace(/['"]/g, '');
-        }
-      }
-      
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = downloadName;
-      document.body.appendChild(link);
-      link.click();
-      
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-    } catch (error) {
-      console.error('Erro ao fazer download do arquivo:', error);
-      alert(`Erro ao fazer download: ${error.message}`);
+      throw new Error(`Erro no download: ${response.status} ${response.statusText}`);
     }
+
+    const blob = await response.blob();
+    const contentType = response.headers.get('content-type');
+    const contentDisposition = response.headers.get('content-disposition');
+
+    let downloadName = file.name;
+
+    if (contentType && contentType.includes('application/zip')) {
+      if (!downloadName.endsWith('.zip')) {
+        downloadName = downloadName.replace(/\.[^/.]+$/, '') + '.zip';
+      }
+    }
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        downloadName = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = downloadName;
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error('Erro ao fazer download do arquivo:', error);
+    alert(`Erro ao fazer download: ${error.message}`);
   }
+}
+
 
   // Nova função para download de múltiplos arquivos
   const handleMultipleDownload = async () => {
-    if (selectedFiles.length === 0) {
-      alert('Nenhum arquivo selecionado para download.');
-      return;
-    }
+  if (selectedFiles.length === 0) {
+    alert('Nenhum arquivo selecionado para download.');
+    return;
+  }
 
-    if (!localStorage.getItem('token')) {
-      alert('Token de autenticação não encontrado. Por favor, faça login.');
-      return;
-    }
+  if (!localStorage.getItem('token')) {
+    alert('Token de autenticação não encontrado. Por favor, faça login.');
+    return;
+  }
 
-    try {
-      // Assumindo que o backend tem um endpoint para download de múltiplos arquivos
-      // que aceita uma lista de IDs e retorna um ZIP ou similar.
-      const response = await fetch('http://localhost:8080/api/files/download-multiple', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ fileIds: selectedFiles }),
-      });
+  try {
+    const response = await fetch('http://localhost:8080/api/files/download-multiple', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fileIds: selectedFiles }),
+    });
 
-      if (!response.ok) {
-        throw new Error(`Erro no download de múltiplos arquivos: ${response.status} ${response.statusText}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (errorData?.error === 'FORBIDDEN') {
+        alert(errorData.message);
+        return;
       }
-
-      const blob = await response.blob();
-      const contentDisposition = response.headers.get('content-disposition');
-      let downloadName = 'arquivos_selecionados.zip'; // Nome padrão
-
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        if (filenameMatch && filenameMatch[1]) {
-          downloadName = filenameMatch[1].replace(/['"]/g, '');
-        }
-      }
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = downloadName;
-      document.body.appendChild(link);
-      link.click();
-
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      setSelectedFiles([]); // Limpa a seleção após o download
-
-    } catch (error) {
-      console.error('Erro ao fazer download de múltiplos arquivos:', error);
-      alert(`Erro ao fazer download de múltiplos arquivos: ${error.message}`);
+      throw new Error(`Erro no download de múltiplos arquivos: ${response.status} ${response.statusText}`);
     }
-  };
+
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('content-disposition');
+    let downloadName = 'arquivos_selecionados.zip';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        downloadName = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = downloadName;
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    setSelectedFiles([]);
+
+  } catch (error) {
+    console.error('Erro ao fazer download de múltiplos arquivos:', error);
+    alert(`Erro ao fazer download de múltiplos arquivos: ${error.message}`);
+  }
+};
+
 
   const handleCheckboxChange = (fileId) => {
     setSelectedFiles((prevSelectedFiles) =>
@@ -454,12 +459,16 @@ const Files = () => {
                 <div key={file.id} className="flex items-center justify-between p-4 border rounded-md">
                   <div className="flex items-center space-x-3">
                     {/* Checkbox para seleção */}
-                    <input
-                      type="checkbox"
-                      checked={selectedFiles.includes(file.id)}
-                      onChange={() => handleCheckboxChange(file.id)}
-                      className="form-checkbox h-5 w-5 text-blue-600 rounded"
-                    />
+                      <button
+                        onClick={() => handleCheckboxChange(file.id)}
+                        className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          selectedFiles.includes(file.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-400'
+                        }`}
+                      >
+                        {selectedFiles.includes(file.id) && (
+                          <CheckCircle className="h-4 w-4 text-white" />
+                        )}
+                      </button>
                     {getFileIcon(file.type)}
                     <div>
                       <p className="font-medium">{file.name}</p>

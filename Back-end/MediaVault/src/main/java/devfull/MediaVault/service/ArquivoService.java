@@ -91,20 +91,15 @@ public class ArquivoService {
 	}
 
 	public ResponseEntity<Resource> downloadArquivosZip(List<Long> ids) {
-	    User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
 	    List<Arquivo> arquivosValidos = new ArrayList<>();
 
 	    for (Long id : ids) {
 	        Arquivo arquivo = repositor.findById(id)
 	            .orElseThrow(() -> new RecursoNaoEncontradoException("Arquivo não encontrado: ID " + id));
 
-	        if (!arquivo.getUser().getId().equals(user.getId())) {
-	            throw new AcessoNegadoException("Você não tem permissão para acessar o arquivo ID " + id);
-	        }
-
-	        if (arquivo.getData_expiracao().isBefore(LocalDate.now())) {
-	            continue; // Ignora expirados
+	
+	        if ("expired".equalsIgnoreCase(arquivo.getStatus())) {
+	            throw new AcessoNegadoException("O arquivo '" + arquivo.getNome() + "' está expirado e não pode ser baixado.");
 	        }
 
 	        arquivosValidos.add(arquivo);
@@ -123,16 +118,9 @@ public class ArquivoService {
 	                    throw new RuntimeException("Arquivo físico não encontrado: " + caminhoOriginal);
 	                }
 
-	                String nomeArquivo = arquivo.getNome();
-	                System.out.println("Adicionando ao ZIP: " + nomeArquivo + " | Caminho: " + caminhoOriginal);
-
-	                try {
-	                    zipOut.putNextEntry(new ZipEntry(nomeArquivo));
-	                    Files.copy(caminhoOriginal, zipOut);
-	                    zipOut.closeEntry();
-	                } catch (IOException e) {
-	                    throw new RuntimeException("Erro ao adicionar arquivo ao ZIP: " + nomeArquivo, e);
-	                }
+	                zipOut.putNextEntry(new ZipEntry(arquivo.getNome()));
+	                Files.copy(caminhoOriginal, zipOut);
+	                zipOut.closeEntry();
 	            }
 	        }
 
