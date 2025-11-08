@@ -102,8 +102,12 @@ public class ArquivoService {
 	/*----------------------------------------------------------------------------*/
 
 	public List<ArquivoInfoDTO> findAll() {
-		List<Arquivo> lista = repositor.findAll();
+		
+		User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		
+		List<Arquivo> lista = repositor.findAllByUserId(user.getId());
 		List<ArquivoInfoDTO> listagem = lista.stream().map(x -> new ArquivoInfoDTO(x)).toList();
+		
 		return listagem;
 	}
 

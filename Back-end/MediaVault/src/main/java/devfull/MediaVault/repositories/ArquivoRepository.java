@@ -1,5 +1,7 @@
 package devfull.MediaVault.repositories;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,4 +18,5 @@ public interface ArquivoRepository extends JpaRepository<Arquivo, Long>{
     @Query("SELECT COALESCE(SUM(a.tamanho), 0) FROM Arquivo a WHERE a.user.id = :id")
     Long sumTamanhoByUserId(@Param("id") Long id);
 
+    List<Arquivo> findAllByUserId(Long id);
 }
