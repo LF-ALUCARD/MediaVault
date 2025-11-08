@@ -26,11 +26,13 @@ public class Arquivo implements Serializable {
 	private String tipo;
 	private Long tamanho;
 	private String tamanho_formatado;
-	private String caminho_ws;
 	private LocalDate data_upload;
 	private LocalDate data_expiracao;
 	private String status;
 	private Integer dias_restantes;
+	
+	
+	private byte[] midia;
 	
 	@ManyToOne
 	@JoinColumn(name = "usuario_id")
@@ -40,7 +42,7 @@ public class Arquivo implements Serializable {
 	public Arquivo() {
 	}
 
-	public Arquivo(Long id, String nome, String tipo, Long tamanho, String tamanho_formatado, String caminho_ws,
+	public Arquivo(Long id, String nome, String tipo, Long tamanho, String tamanho_formatado, byte[] midia,
 			LocalDate data_upload, LocalDate data_expiracao, String status, Integer dias_restantes, User user) {
 		super();
 		this.id = id;
@@ -48,7 +50,7 @@ public class Arquivo implements Serializable {
 		this.tipo = tipo;
 		this.tamanho = tamanho;
 		this.tamanho_formatado = tamanho_formatado;
-		this.caminho_ws = caminho_ws;
+		this.midia = midia;
 		this.data_upload = data_upload;
 		this.data_expiracao = data_expiracao;
 		this.status = status;
@@ -96,12 +98,12 @@ public class Arquivo implements Serializable {
 		this.tamanho_formatado = tamanho_formatado;
 	}
 
-	public String getCaminho_ws() {
-		return caminho_ws;
+	public byte[] getMidia() {
+		return this.midia;
 	}
 
-	public void setCaminho_ws(String caminho_ws) {
-		this.caminho_ws = caminho_ws;
+	public void setMidia(byte[] midia) {
+		this.midia = midia;
 	}
 
 	public LocalDate getData_upload() {

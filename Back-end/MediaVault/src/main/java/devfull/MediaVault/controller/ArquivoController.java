@@ -30,22 +30,17 @@ public class ArquivoController {
 	private ArquivoService servico;
 
 	@PostMapping("/upload")
-	public ResponseEntity<ArquivoInfoDTO> uploadArquivo(@RequestPart("file") MultipartFile file,
-			@RequestParam("nome") String nome, @RequestParam("tipo") String tipo, @RequestParam("tamanho") Long tamanho,
-			@RequestParam("tamanhoFormatado") String tamanhoFormatado) {
+	public ResponseEntity<ArquivoInfoDTO> uploadArquivo(
+	    @RequestPart("file") MultipartFile file,
+	    @RequestParam("nome") String nome,
+	    @RequestParam("tipo") String tipo,
+	    @RequestParam("tamanho") Long tamanho,
+	    @RequestParam("tamanhoFormatado") String tamanhoFormatado) {
 
-		// Validação básica
-		if (file == null || file.isEmpty()) {
-			throw new IllegalArgumentException("Arquivo não pode estar vazio");
-		}
+	    ArquivoDTO dto = new ArquivoDTO(file, nome, tipo, tamanho, tamanhoFormatado);
+	    ArquivoInfoDTO resposta = servico.uploadArquivo(dto);
 
-		// Monta o DTO manualmente
-		ArquivoDTO dto = new ArquivoDTO(file, nome, tipo, tamanho, tamanhoFormatado);
-
-		// Chama o serviço
-		ArquivoInfoDTO resposta = servico.uploadArquivo(dto);
-
-		return ResponseEntity.ok(resposta);
+	    return ResponseEntity.ok(resposta);
 	}
 
 	@GetMapping()

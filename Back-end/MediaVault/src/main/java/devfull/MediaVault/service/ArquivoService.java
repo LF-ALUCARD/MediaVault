@@ -3,21 +3,16 @@ package devfull.MediaVault.service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,10 +26,9 @@ import devfull.MediaVault.entities.DTO.ArquivoInfoDTO;
 import devfull.MediaVault.repositories.ArquivoRepository;
 import devfull.MediaVault.service.exceptions.AcessoNegadoException;
 import devfull.MediaVault.service.exceptions.ArquivoInvalidoException;
-import devfull.MediaVault.service.exceptions.DataBaseException;
+import devfull.MediaVault.service.exceptions.CredenciaisInvalidasException;
 import devfull.MediaVault.service.exceptions.EmailDuplicadoException;
 import devfull.MediaVault.service.exceptions.RecursoNaoEncontradoException;
-import devfull.MediaVault.service.exceptions.ResourceNotFoundException;
 
 @Service
 public class ArquivoService {
@@ -42,15 +36,18 @@ public class ArquivoService {
 	@Autowired
 	private ArquivoRepository repositor;
 
+	/*----------------------------------------------------------------------------*/
+
 	public ArquivoInfoDTO uploadArquivo(ArquivoDTO obj) {
-		try {
+			long tamanhoMaximo = 500 * 1024 * 1024;
+
 			if (obj.getFile() == null || obj.getFile().isEmpty()) {
 				throw new IllegalArgumentException("Arquivo não pode estar vazio");
 			}
 
-			// Validação de tipo
-			String[] formatosPermitidos = { "mp4", "opus", "avi", "mov", "mp3", "wav", "aac", "ogg", "m4a", "flac",
+			String[] formatosPermitidos = { "mp4", "opus", "avi", "mov", "mp3","mp4", "wav", "aac", "ogg", "m4a", "flac",
 					"jpg", "jpeg", "png", "gif", "bmp", "webp" };
+			
 			String extensao = obj.getNome().substring(obj.getNome().lastIndexOf(".") + 1).toLowerCase();
 			boolean tipoValido = Arrays.stream(formatosPermitidos).anyMatch(extensao::equals);
 
@@ -58,31 +55,51 @@ public class ArquivoService {
 				throw new ArquivoInvalidoException("Formato de arquivo não suportado");
 			}
 
-			// Validação de tamanho (máx. 500MB)
-			long tamanhoMaximo = 500 * 1024 * 1024;
 			if (obj.getTamanho() > tamanhoMaximo) {
 				throw new ArquivoInvalidoException("Arquivo excede o tamanho máximo permitido (500MB)");
 			}
 
-			// Salvar arquivo fisicamente
-			String caminhoWs = salvarArquivoFisico(obj);
+			Arquivo entidade = converter(obj);
 
-			// Criar entidade
-			Arquivo entidade = converter(obj, caminhoWs);
-
-			// Verificar duplicidade
 			if (repositor.existsByNomeAndUserId(obj.getNome(), entidade.getUser().getId())) {
 				throw new EmailDuplicadoException("Arquivo já existente");
 			}
 
-			// Persistir e retornar
 			Arquivo savedArquivo = repositor.save(entidade);
 			return new ArquivoInfoDTO(savedArquivo);
-
-		} catch (IOException e) {
-			throw new RuntimeException("Erro ao salvar o arquivo", e);
-		}
+			
 	}
+
+	private Arquivo converter(ArquivoDTO obj) {
+
+		try {
+			User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+			Arquivo entidade = new Arquivo();
+			entidade.setNome(obj.getNome());
+			entidade.setTipo(obj.getTipo());
+			entidade.setTamanho(obj.getTamanho());
+			entidade.setTamanho_formatado(obj.getTamanhoFormatado());
+			entidade.setMidia(obj.getFile().getBytes());
+			entidade.setData_upload(LocalDate.now());
+			entidade.setStatus("valid");
+
+			entidade.setData_expiracao(LocalDate.now().plusDays(180));
+
+			entidade.setDias_restantes(180);
+			entidade.setUser(user);
+
+			return entidade;
+
+		}
+
+		catch (IOException e) {
+			throw new ArquivoInvalidoException("Erro de Salvar arquivo");
+		}
+
+	}
+
+	/*----------------------------------------------------------------------------*/
 
 	public List<ArquivoInfoDTO> findAll() {
 		List<Arquivo> lista = repositor.findAll();
@@ -90,16 +107,18 @@ public class ArquivoService {
 		return listagem;
 	}
 
+	/*----------------------------------------------------------------------------*/
+
 	public ResponseEntity<Resource> downloadArquivosZip(List<Long> ids) {
 	    List<Arquivo> arquivosValidos = new ArrayList<>();
 
 	    for (Long id : ids) {
 	        Arquivo arquivo = repositor.findById(id)
-	            .orElseThrow(() -> new RecursoNaoEncontradoException("Arquivo não encontrado: ID " + id));
+	                .orElseThrow(() -> new RecursoNaoEncontradoException("Arquivo não encontrado: ID " + id));
 
-	
 	        if ("expired".equalsIgnoreCase(arquivo.getStatus())) {
-	            throw new AcessoNegadoException("O arquivo '" + arquivo.getNome() + "' está expirado e não pode ser baixado.");
+	            throw new AcessoNegadoException(
+	                    "O arquivo " + arquivo.getNome() + " está expirado e não pode ser baixado.");
 	        }
 
 	        arquivosValidos.add(arquivo);
@@ -113,126 +132,34 @@ public class ArquivoService {
 	        Path zipTemp = Files.createTempFile("arquivos_", ".zip");
 	        try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(zipTemp))) {
 	            for (Arquivo arquivo : arquivosValidos) {
-	                Path caminhoOriginal = Paths.get(arquivo.getCaminho_ws());
-	                if (!Files.exists(caminhoOriginal)) {
-	                    throw new RuntimeException("Arquivo físico não encontrado: " + caminhoOriginal);
-	                }
-
 	                zipOut.putNextEntry(new ZipEntry(arquivo.getNome()));
-	                Files.copy(caminhoOriginal, zipOut);
+	                zipOut.write(arquivo.getMidia());
 	                zipOut.closeEntry();
 	            }
 	        }
 
 	        InputStreamResource resource = new InputStreamResource(Files.newInputStream(zipTemp));
 	        return ResponseEntity.ok()
-	            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"arquivos_selecionados.zip\"")
-	            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-	            .body(resource);
+	                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"arquivos_selecionados.zip\"")
+	                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+	                .body(resource);
 
 	    } catch (IOException e) {
 	        throw new RuntimeException("Erro ao gerar o arquivo ZIP: " + e.getMessage(), e);
 	    }
 	}
-	
-	private String salvarArquivoFisico(ArquivoDTO obj) throws IOException {
-		if (obj.getFile() == null) {
-			throw new IllegalArgumentException("Arquivo não pode ser null");
-		}
 
-		String basePath = "C:\\midia";
-		String tipo = obj.getTipo().toLowerCase();
-		String tipoPasta;
 
-		// Define a pasta com base no tipo
-		switch (tipo) {
-		case "video":
-			tipoPasta = "video";
-			break;
-		case "audio":
-			tipoPasta = "audio";
-			break;
-		case "image":
-			tipoPasta = "image";
-			break;
-		default:
-			throw new IllegalArgumentException("Tipo de arquivo inválido: " + tipo);
-		}
-
-		Path pastaDestino = Paths.get(basePath, tipoPasta);
-		Files.createDirectories(pastaDestino); // cria se não existir
-
-		// Gera nome físico único
-		String extensao = obj.getNome().substring(obj.getNome().lastIndexOf("."));
-		String nomeUnico = UUID.randomUUID().toString() + extensao;
-
-		Path caminhoArquivo = pastaDestino.resolve(nomeUnico);
-		Files.copy(obj.getFile().getInputStream(), caminhoArquivo, StandardCopyOption.REPLACE_EXISTING);
-
-		return caminhoArquivo.toString();
-	}
+	/*----------------------------------------------------------------------------*/
 
 	public void delete(Long id) {
-		if (!repositor.existsById(id)) {
-			throw new ResourceNotFoundException("Id não encontrado");
-		}
 
-		try {
-			boolean arquivoApagado = apagandoArquivo(id);
+		Arquivo arquivo = repositor.findById(id)
+				.orElseThrow(() -> new CredenciaisInvalidasException("Arquivo não encontrado"));
 
-			if (!arquivoApagado) {
-				System.out.println("Arquivo físico não encontrado, mas metadados serão removidos.");
-			}
+		repositor.delete(arquivo);
 
-			repositor.deleteById(id);
-		} catch (DataIntegrityViolationException e) {
-			throw new DataBaseException(e.getMessage());
-		} catch (RuntimeException e) {
-			throw new RuntimeException("Erro ao apagar arquivo físico: " + e.getMessage());
-		}
 	}
+	/*----------------------------------------------------------------------------*/
 
-	private boolean apagandoArquivo(Long id) {
-		Optional<Arquivo> obj = repositor.findById(id);
-		if (obj.isEmpty()) {
-			return false;
-		}
-
-		Path caminhoCompleto = Paths.get(obj.get().getCaminho_ws());
-
-		try {
-			if (Files.exists(caminhoCompleto)) {
-				Files.delete(caminhoCompleto);
-				return true;
-			} else {
-				return false;
-			}
-		} catch (IOException e) {
-			throw new RuntimeException("Erro ao apagar o arquivo: " + e.getMessage());
-		}
-	}
-
-	private Arquivo converter(ArquivoDTO obj, String caminho) {
-		User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-		Arquivo entidade = new Arquivo();
-		entidade.setNome(obj.getNome());
-		entidade.setTipo(obj.getTipo());
-		entidade.setTamanho(obj.getTamanho());
-		entidade.setTamanho_formatado(obj.getTamanhoFormatado()); // Corrigido: usando o getter correto
-		entidade.setCaminho_ws(caminho);
-		entidade.setData_upload(LocalDate.now());
-		entidade.setStatus("valid");
-
-		// Corrigido: removida duplicação e calculando corretamente
-		LocalDate dataExpiracao = LocalDate.now().plusDays(180);
-		entidade.setData_expiracao(dataExpiracao);
-
-		// Calculando dias restantes
-		entidade.setDias_restantes(180);
-
-		entidade.setUser(user);
-
-		return entidade;
-	}
 }
