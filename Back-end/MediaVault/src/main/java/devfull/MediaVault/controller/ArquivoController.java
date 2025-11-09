@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import devfull.MediaVault.entities.DTO.ArquivoDTO;
 import devfull.MediaVault.entities.DTO.ArquivoInfoDTO;
+import devfull.MediaVault.entities.DTO.DeleteRequestDTO;
 import devfull.MediaVault.entities.DTO.DownloadRequestDTO;
 import devfull.MediaVault.service.ArquivoService;
 
@@ -54,14 +55,11 @@ public class ArquivoController {
 	    return servico.downloadArquivosZip(dto.getFileIds());
 	}
 
-	@GetMapping("/{id}/download")
-	public ResponseEntity<Resource> downloadArquivo(@PathVariable Long id) {
-		return servico.downloadArquivosZip(List.of(id));
-	}
-
-	@DeleteMapping(value = "/{id}")
-	public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
-		servico.delete(id);
+	@DeleteMapping("delete")
+	public ResponseEntity<Map<String, String>> delete(@RequestBody DeleteRequestDTO dto) {
+		
+		servico.delete(dto.getFileIds());
+		
 		return ResponseEntity.ok().body(Map.of("message", "Arquivo excluído com sucesso"));
 	}
 

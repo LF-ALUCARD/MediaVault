@@ -12,24 +12,17 @@ public class DashboardStatsDTO implements Serializable {
 	private Integer validFiles;
 	private Integer expiringFiles;
 	private Integer expiredFiles;
-	private Long totalStorage;
-	private Long usedStorage;
-	private Integer storagePercentage;
 
 	List<ArquivoInfoDTO> recentFiles = new ArrayList<>();
 
 	public DashboardStatsDTO() {
 	}
 
-	public DashboardStatsDTO(Integer totalFiles, Integer validFiles, Integer expiringFiles, Integer expiredFiles,
-			Long totalStorage, Long usedStorage, Integer storagePercentage) {
+	public DashboardStatsDTO(Integer totalFiles, Integer validFiles, Integer expiringFiles, Integer expiredFiles) {
 		this.totalFiles = totalFiles;
 		this.validFiles = validFiles;
 		this.expiringFiles = expiringFiles;
 		this.expiredFiles = expiredFiles;
-		this.totalStorage = totalStorage;
-		this.usedStorage = usedStorage;
-		this.storagePercentage = storagePercentage;
 	}
 
 	public Integer getTotalFiles() {
@@ -62,30 +55,6 @@ public class DashboardStatsDTO implements Serializable {
 
 	public void setExpiredFiles(Integer expiredFiles) {
 		this.expiredFiles = expiredFiles;
-	}
-
-	public Long getTotalStorage() {
-		return totalStorage;
-	}
-
-	public void setTotalStorage(Long totalStorage) {
-		this.totalStorage = totalStorage;
-	}
-
-	public Long getUsedStorage() {
-		return usedStorage;
-	}
-
-	public void setUsedStorage(Long usedStorage) {
-		this.usedStorage = usedStorage;
-	}
-
-	public Integer getStoragePercentage() {
-		return storagePercentage;
-	}
-
-	public void setStoragePercentage(Integer storagePercentage) {
-		this.storagePercentage = storagePercentage;
 	}
 
 	public List<ArquivoInfoDTO> getRecentFiles() {

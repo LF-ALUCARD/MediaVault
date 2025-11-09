@@ -10,7 +10,7 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
-  HardDrive,
+
   TrendingUp,
   Calendar,
   Loader2
@@ -50,30 +50,13 @@ const Dashboard = () => {
         
         console.log('Dados recebidos da API:', data) // Para debug
         
-        // CORREÇÃO: Como a API já envia os valores em GB, vamos formatá-los adequadamente
-        const formatStorageFromGB = (gbValue) => {
-          if (!gbValue || gbValue === 0) return '0 GB'
-          
-          // Se o valor for menor que 1 GB, converter para MB
-          if (gbValue < 1) {
-            const mbValue = gbValue * 1024
-            return `${mbValue.toFixed(2)} MB`
-          }
-          
-          // Se for maior ou igual a 1 GB, manter em GB
-          return `${gbValue.toFixed(2)} GB`
-        }
-
-        // Criando o objeto stats com os dados formatados corretamente
-        const formattedStats = {
-          totalFiles: data.totalFiles || 0,
-          validFiles: data.validFiles || 0,
-          expiringFiles: data.expiringFiles || 0,
-          expiredFiles: data.expiredFiles || 0,
-          totalStorage: formatStorageFromGB(data.totalStorage),
-          usedStorage: formatStorageFromGB(data.usedStorage),
-          storagePercentage: data.storagePercentage || 0
-        }
+	        // Criando o objeto stats com os dados necessários
+	        const formattedStats = {
+	          totalFiles: data.totalFiles || 0,
+	          validFiles: data.validFiles || 0,
+	          expiringFiles: data.expiringFiles || 0,
+	          expiredFiles: data.expiredFiles || 0,
+	        }
 
         setStats(formattedStats)
         setRecentFiles(data.recentFiles || [])
@@ -240,30 +223,7 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Uso de armazenamento */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <HardDrive className="h-5 w-5 mr-2" />
-            Uso de Armazenamento do Disco
-          </CardTitle>
-          <CardDescription>
-            Espaço total do disco onde os arquivos são armazenados
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm">
-              <span>Usado: {stats.usedStorage}</span>
-              <span>Total: {stats.totalStorage}</span>
-            </div>
-            <Progress value={stats.storagePercentage} className="h-2" />
-            <p className="text-xs text-muted-foreground">
-              {stats.storagePercentage}% do disco utilizado
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Arquivos recentes */}
       <Card>

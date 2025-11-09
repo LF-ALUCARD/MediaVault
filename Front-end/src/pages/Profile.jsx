@@ -49,7 +49,7 @@ const Profile = () => {
   const [passwordLoading, setPasswordLoading] = useState(false)
 
   // Adicionado para as estatísticas da conta
-  const [userStats, setUserStats] = useState({ totalFiles: 0, totalStorage: '0 GB', memberSince: '', lastLogin: '' })
+  const [userStats, setUserStats] = useState({ totalFiles: 0, totalStorage: '0 GB' })
   const [loadingStats, setLoadingStats] = useState(false)
 
   // Função para formatar bytes em GB/MB
@@ -84,9 +84,7 @@ const Profile = () => {
         setUserStats({
           totalFiles: data.totalFiles || 0,
           totalStorage: formatStorage(data.totalStorage),
-          memberSince: '2024-01-15',
-          lastLogin: '2024-10-04'
-        })
+                })
       } catch (err) {
         console.error('Erro ao buscar dados da conta:', err)
       } finally {
@@ -163,14 +161,7 @@ const onPasswordSubmit = async (data) => {
   }
 }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
+
 
   return (
     <div className="space-y-6">
@@ -191,14 +182,8 @@ const onPasswordSubmit = async (data) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Calendar className="h-5 w-5 text-primary" />
-              </div>
-              <p className="text-sm text-muted-foreground">Membro desde</p>
-              <p className="font-semibold">{loadingStats ? '...' : formatDate(userStats.memberSince)}</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 justify-center mx-auto max-w-lg">
+
             
             <div className="text-center">
               <div className="flex items-center justify-center mb-2">
@@ -216,13 +201,7 @@ const onPasswordSubmit = async (data) => {
               <p className="font-semibold">{loadingStats ? '...' : userStats.totalStorage}</p>
             </div>
             
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              </div>
-              <p className="text-sm text-muted-foreground">Último acesso</p>
-              <p className="font-semibold">{loadingStats ? '...' : formatDate(userStats.lastLogin)}</p>
-            </div>
+
           </div>
         </CardContent>
       </Card>

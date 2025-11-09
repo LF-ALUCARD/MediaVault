@@ -220,62 +220,118 @@ const Files = () => {
 
   // Nova função para download de múltiplos arquivos
   const handleMultipleDownload = async () => {
-  if (selectedFiles.length === 0) {
-    alert('Nenhum arquivo selecionado para download.');
-    return;
-  }
-
-  if (!localStorage.getItem('token')) {
-    alert('Token de autenticação não encontrado. Por favor, faça login.');
-    return;
-  }
-
-  try {
-    const response = await fetch('http://localhost:8080/api/files/download-multiple', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ fileIds: selectedFiles }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (errorData?.error === 'FORBIDDEN') {
-        alert(errorData.message);
-        return;
-      }
-      throw new Error(`Erro no download de múltiplos arquivos: ${response.status} ${response.statusText}`);
+    if (selectedFiles.length === 0) {
+      alert('Nenhum arquivo selecionado para download.');
+      return;
     }
 
-    const blob = await response.blob();
-    const contentDisposition = response.headers.get('content-disposition');
-    let downloadName = 'arquivos_selecionados.zip';
-
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch && filenameMatch[1]) {
-        downloadName = filenameMatch[1].replace(/['"]/g, '');
-      }
+    if (!localStorage.getItem('token')) {
+      alert('Token de autenticação não encontrado. Por favor, faça login.');
+      return;
     }
 
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = downloadName;
-    document.body.appendChild(link);
-    link.click();
+    try {
+      const response = await fetch('http://localhost:8080/api/files/download-multiple', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileIds: selectedFiles }),
+      });
 
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    setSelectedFiles([]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData?.error === 'FORBIDDEN') {
+          alert(errorData.message);
+          return;
+        }
+        throw new Error(`Erro no download de múltiplos arquivos: ${response.status} ${response.statusText}`);
+      }
 
-  } catch (error) {
-    console.error('Erro ao fazer download de múltiplos arquivos:', error);
-    alert(`Erro ao fazer download de múltiplos arquivos: ${error.message}`);
-  }
-};
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('content-disposition');
+      let downloadName = 'arquivos_selecionados.zip';
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          downloadName = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = downloadName;
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setSelectedFiles([]);
+
+    } catch (error) {
+      console.error('Erro ao fazer download de múltiplos arquivos:', error);
+      alert(`Erro ao fazer download de múltiplos arquivos: ${error.message}`);
+    }
+  };
+
+  // Nova função para exclusão de múltiplos arquivos
+  const handleDeleteSelected = async () => {
+    if (selectedFiles.length === 0) {
+      alert('Nenhum arquivo selecionado para exclusão.');
+      return;
+    }
+
+    if (!confirm(`Tem certeza que deseja excluir ${selectedFiles.length} arquivo(s) selecionado(s)?`)) {
+      return;
+    }
+
+    if (!localStorage.getItem('token')) {
+      alert('Token de autenticação não encontrado. Por favor, faça login.');
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:8080/api/files/delete", {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileIds: selectedFiles }),
+      });
+
+      if (!response.ok) {
+        let errorData = {};
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          // Se não for JSON, apenas lança o erro com o status
+          throw new Error(`Erro na exclusão: ${response.status} ${response.statusText}`);
+        }
+        throw new Error(errorData.message || `Erro na exclusão: ${response.status} ${response.statusText}`);
+      }
+
+      // Verifica se a resposta está vazia antes de tentar ler como JSON
+      if (response.status !== 204 && response.headers.get('content-length') !== '0') {
+        // Se a API retornar um corpo (ex: mensagem de sucesso), lê o JSON
+        // Mas como o erro indica que a API não retorna JSON, vamos apenas ignorar a leitura do corpo
+        // e assumir que o sucesso (response.ok) é suficiente.
+        // Se o backend for corrigido para retornar JSON, esta parte pode ser ajustada.
+      }
+
+      // Atualiza a lista de arquivos removendo os excluídos
+      setFiles(prevFiles => prevFiles.filter(file => !selectedFiles.includes(file.id)));
+      setSelectedFiles([]);
+      alert(`${selectedFiles.length} arquivo(s) excluído(s) com sucesso!`);
+
+    } catch (error) {
+      console.error('Erro ao excluir múltiplos arquivos:', error);
+      alert(`Erro ao excluir múltiplos arquivos: ${error.message}`);
+    }
+  };
 
 
   const handleCheckboxChange = (fileId) => {
@@ -286,24 +342,7 @@ const Files = () => {
     );
   };
 
-  const handleDelete = async (fileId) => {
-    if (confirm('Tem certeza que deseja excluir este arquivo?')) {
-      try {
-        await fetch(`http://localhost:8080/api/files/${fileId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
 
-        alert('Arquivo excluído com sucesso!');
-        setFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
-      } catch (error) {
-        console.error('Erro ao excluir arquivo:', error);
-        alert('Erro ao excluir o arquivo. Tente novamente.');
-      }
-    }
-  };
 
   const getStatusCounts = () => {
     const valid = files.filter(f => f.status === 'valid').length
@@ -437,12 +476,18 @@ const Files = () => {
       </div>
 
       {/* Botão de Download Múltiplo */}
-      {selectedFiles.length > 0 && (
-        <Button onClick={handleMultipleDownload} className="w-full md:w-auto">
-          <Download className="h-4 w-4 mr-2" />
-          Download Selecionados ({selectedFiles.length})
-        </Button>
-      )}
+{selectedFiles.length > 0 && (
+            <>
+              <Button onClick={handleMultipleDownload} className="ml-4">
+                <Download className="h-4 w-4 mr-2" />
+                Baixar Selecionados ({selectedFiles.length})
+              </Button>
+              <Button onClick={handleDeleteSelected} variant="destructive" className="ml-4">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir Selecionados ({selectedFiles.length})
+              </Button>
+            </>
+          )}
 
       {/* Lista de Arquivos */}
       <Card>
@@ -477,32 +522,8 @@ const Files = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center">
                     {getStatusBadge(file.status, file.daysRemaining)}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Abrir menu</span>
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleDownload(file)}
-                          className="text-blue-600"
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(file.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
                 </div>
               ))}
