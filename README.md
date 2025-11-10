@@ -35,13 +35,18 @@ Este é o coração do MediaVault. O sistema classifica automaticamente seus arq
 *   **Filtros Avançados:** Encontre exatamente o que precisa, filtrando por tipo (áudio ou vídeo) e pelo status de validade.
 *   **Download Seguro:** Baixe seus arquivos válidos em formato ZIP, prontos para uso.
 
-## 🛠️ Tecnologia Moderna
+## 🛠️ Tecnologia Moderna: Uma Solução Full-Stack Robusta
 
-Construído com uma pilha de tecnologia de ponta para garantir velocidade e uma experiência de usuário impecável:
+O MediaVault é construído sobre uma arquitetura moderna e robusta, garantindo tanto uma experiência de usuário impecável (Front-end) quanto segurança e performance no processamento de dados (Back-end).
 
+### Front-end (Interface do Usuário)
 *   **React:** Para uma interface dinâmica e reativa.
 *   **Tailwind CSS & shadcn/ui:** Para um design elegante, responsivo e com tema escuro.
 *   **Vite:** Para um desenvolvimento rápido e eficiente.
+
+### Back-end (Serviços e Dados)
+*   **Java Spring:** Framework robusto e escalável, responsável por toda a lógica de negócios, segurança (JWT) e gerenciamento dos endpoints da API.
+*   **MySQL:** Banco de dados relacional utilizado para armazenar informações de usuários e metadados dos arquivos, garantindo integridade e consistência dos dados.
 
 ---
 
