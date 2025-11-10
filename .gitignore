@@ -55,7 +55,6 @@ hs_err_pid*
 *.class
 *.war
 *.ear
-*.jar
 *.zip
 
 # Banco de dados embutido (H2, SQLite, etc.)
